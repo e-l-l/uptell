@@ -1,7 +1,15 @@
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      {children}
+    </SidebarProvider>
+  );
 }
