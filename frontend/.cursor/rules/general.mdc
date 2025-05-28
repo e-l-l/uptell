@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Always use components from shadcn components, Always install them from cli if not found, dont create them yourself.
+- Make sure to use proper project structure
+- Always use theme variables in tailwind, add new variable if you think you need a new one and it is reusable.
