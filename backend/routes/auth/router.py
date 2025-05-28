@@ -10,9 +10,16 @@ from supabase_client import get_admin_client
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-class AuthRequest(BaseModel):
+class SignUpRequest(BaseModel):
     email: str
     password: str
+    firstName: str
+    lastName: str
+
+class SignInRequest(BaseModel):
+    email: str
+    password: str
+
 
 def handle_auth_error(error):
     """Handle common Supabase auth errors and return appropriate HTTP exceptions"""
@@ -33,16 +40,25 @@ def handle_auth_error(error):
         )
 
 @router.post("/signup")
-def signup(auth: AuthRequest):
+def signup(auth: SignUpRequest):
     try:
         client = get_admin_client()
-        res = client.auth.sign_up({"email": auth.email, "password": auth.password})
+        res = client.auth.sign_up({
+            "email": auth.email, 
+            "password": auth.password,
+            "options": {
+                "data": {
+                    "first_name": auth.firstName,
+                    "last_name": auth.lastName
+                }
+            }
+        })
         return res
     except Exception as e:
         handle_auth_error(e)
 
 @router.post("/signin")
-def signin(auth: AuthRequest):
+def signin(auth: SignInRequest):
     try:
         client = get_admin_client()
         res = client.auth.sign_in_with_password({"email": auth.email, "password": auth.password})

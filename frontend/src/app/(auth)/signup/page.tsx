@@ -23,6 +23,8 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    firstName: "",
+    lastName: "",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +47,10 @@ export default function SignUpPage() {
 
     try {
       setIsLoading(true);
-      await apiClient.signUp(formData.email, formData.password);
+      await apiClient.signUp(formData.email, formData.password, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      });
       router.push("/login");
     } catch (err: any) {
       setError(err.message || "Failed to create account");
@@ -68,6 +73,30 @@ export default function SignUpPage() {
             {error && (
               <div className="text-sm text-red-500 text-left">{error}</div>
             )}
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="Enter your first name"
+                className="border-border"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Enter your last name"
+                className="border-border"
+                value={formData.lastName}
+                onChange={handleChange}
+                required
+              />
+            </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input

@@ -57,10 +57,16 @@ class ApiClient {
   }
 
   // Auth methods
-  async signUp(email: string, password: string) {
+  async signUp(
+    email: string,
+    password: string,
+    userData?: { firstName: string; lastName: string }
+  ) {
     const response = await this.client.post("/auth/signup", {
       email,
       password,
+      firstName: userData?.firstName,
+      lastName: userData?.lastName,
     });
     return response.data;
   }
