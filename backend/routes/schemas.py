@@ -97,3 +97,38 @@ class Log(LogBase):
 
     class Config:
         from_attributes = True
+
+class UserOrganizationBase(BaseModel):
+    user_id: UUID
+    org_id: UUID
+    role: Literal["owner", "member"]
+
+class UserOrganizationCreate(UserOrganizationBase):
+    pass
+
+class UserOrganizationUpdate(BaseModel):
+    role: Optional[Literal["owner", "member"]] = None
+
+class UserOrganization(UserOrganizationBase):
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class OrganizationInviteBase(BaseModel):
+    org_id: UUID
+    email: str
+    role: Literal["owner", "member"]
+    code: str
+
+class OrganizationInviteCreate(OrganizationInviteBase):
+    pass
+
+class OrganizationInvite(OrganizationInviteBase):
+    id: UUID
+    created_at: datetime
+    expires_at: datetime
+
+    class Config:
+        from_attributes = True

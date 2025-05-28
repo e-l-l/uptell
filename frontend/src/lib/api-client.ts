@@ -95,6 +95,47 @@ class ApiClient {
     updateAuthState(this.store.set, null);
   }
 
+  // Organization methods
+  async createOrganization(name: string) {
+    const response = await this.client.post("/organizations", { name });
+    return response.data;
+  }
+
+  async listOrganizations() {
+    const response = await this.client.get("/organizations");
+    return response.data;
+  }
+
+  async getOrganization(orgId: string) {
+    const response = await this.client.get(`/organizations/${orgId}`);
+    return response.data;
+  }
+
+  async createOrganizationInvite(
+    orgId: string,
+    email: string,
+    role: "owner" | "member"
+  ) {
+    const response = await this.client.post("/user-organizations/invites", {
+      org_id: orgId,
+      email,
+      role,
+    });
+    return response.data;
+  }
+
+  async joinOrganization(code: string) {
+    const response = await this.client.post(`/user-organizations/join/${code}`);
+    return response.data;
+  }
+
+  async listUserOrganizations(userId: string) {
+    const response = await this.client.get(
+      `/user-organizations/user/${userId}`
+    );
+    return response.data;
+  }
+
   // Generic request methods
   async get<T>(url: string, params?: any) {
     const response = await this.client.get<T>(url, { params });

@@ -43,33 +43,47 @@ def handle_auth_error(error):
             detail=str(error)
         )
 
-@router.post("/signup", response_model=AuthResponse)
-def signup(auth: SignUpRequest):
+@router.post("/signup")
+async def signup(request: SignUpRequest):
     try:
-        client = get_admin_client()
-        res = client.auth.sign_up({
-            "email": auth.email, 
-            "password": auth.password,
+        # Create user in Supabase Auth
+        admin = get_admin_client()
+        user = admin.auth.sign_up({
+            "email": request.email,
+            "password": request.password,
             "options": {
                 "data": {
-                    "first_name": auth.firstName,
-                    "last_name": auth.lastName
+                    "first_name": request.firstName,
+                    "last_name": request.lastName
                 }
             }
         })
-        
-        # Extract the session data
-        session = res.session
-        if not session:
-            raise HTTPException(status_code=500, detail="No session created during signup")
-            
-        return AuthResponse(
-            access_token=session.access_token,
-            token_type="bearer",
-            user=res.user.model_dump()
-        )
+
+        # Create default organization using user's first name
+        org_name = f"{request.firstName}'s Organization"
+        org = admin.table("orgs").insert({
+            "name": org_name
+        }).execute()
+
+        if not org.data:
+            raise HTTPException(status_code=400, detail="Failed to create organization")
+
+        # Add user to organization as owner
+        user_org = admin.table("user_orgs").insert({
+            "user_id": user.user.id,
+            "org_id": org.data[0]["id"],
+            "role": "owner"
+        }).execute()
+
+        if not user_org.data:
+            raise HTTPException(status_code=400, detail="Failed to add user to organization")
+
+        return {"message": "User created successfully", "user": user.user}
+
+    except AuthWeakPasswordError:
+        raise HTTPException(status_code=400, detail="Password is too weak")
     except Exception as e:
-        handle_auth_error(e)
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/signin", response_model=AuthResponse)
 def signin(auth: SignInRequest):
