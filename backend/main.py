@@ -5,9 +5,16 @@ from routes.auth.router import router as auth_router
 from routes.orgs.router import router as org_router
 from routes.apps.router import router as app_router
 from routes.incidents.router import router as incident_router
-
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Include all routers
 app.include_router(auth_router)
 app.include_router(org_router)
