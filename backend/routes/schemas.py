@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Literal, Optional, List
 from datetime import datetime
+from uuid import UUID
 
 class OrganizationBase(BaseModel):
     name: str
@@ -12,7 +13,7 @@ class OrganizationUpdate(OrganizationBase):
     name: Optional[str] = None
 
 class Organization(OrganizationBase):
-    id: int
+    id: UUID
     created_at: datetime
 
     class Config:
@@ -20,17 +21,17 @@ class Organization(OrganizationBase):
 
 class TeamBase(BaseModel):
     name: str
-    org_id: int
+    org_id: UUID
 
 class TeamCreate(TeamBase):
     pass
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
-    org_id: Optional[int] = None
+    org_id: Optional[UUID] = None
 
 class Team(TeamBase):
-    id: int
+    id: UUID
     created_at: datetime
 
     class Config:
@@ -38,40 +39,42 @@ class Team(TeamBase):
 
 class ApplicationBase(BaseModel):
     name: str
-    type: str
-    org_id: int
+    org_id: UUID
+    status: str
 
 class ApplicationCreate(ApplicationBase):
     pass
 
 class ApplicationUpdate(BaseModel):
     name: Optional[str] = None
-    type: Optional[str] = None
-    org_id: Optional[int] = None
+    org_id: Optional[UUID] = None
+    status: Optional[str] = None
 
 class Application(ApplicationBase):
-    id: int
+    id: UUID
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 class IncidentBase(BaseModel):
-    title: str
-    status: str
-    application_id: int
+    org_id: UUID
+    app_id: UUID
+    status: Literal["Reported", "Investigating", "Identified", "Fixed"]
+    description: str
 
 class IncidentCreate(IncidentBase):
     pass
 
 class IncidentUpdate(BaseModel):
-    title: Optional[str] = None
-    status: Optional[str] = None
-    application_id: Optional[int] = None
+    org_id: Optional[UUID] = None
+    app_id: Optional[UUID] = None
+    status: Optional[Literal["Reported", "Investigating", "Identified", "Fixed"]] = None
+    description: Optional[str] = None
 
 class Incident(IncidentBase):
-    id: int
-    created_at: datetime
+    id: UUID
+    time: datetime
 
     class Config:
         from_attributes = True
@@ -83,16 +86,14 @@ class LogBase(BaseModel):
 
 class LogCreate(LogBase):
     pass
-
 class LogUpdate(BaseModel):
     status: Optional[str] = None
     message: Optional[str] = None
-    time: Optional[str] = None
 
 class Log(LogBase):
-    id: int
-    incident_id: int
+    id: UUID
+    incident_id: UUID
     created_at: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
