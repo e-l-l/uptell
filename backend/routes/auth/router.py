@@ -20,6 +20,10 @@ class SignInRequest(BaseModel):
     email: str
     password: str
 
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: dict
 
 def handle_auth_error(error):
     """Handle common Supabase auth errors and return appropriate HTTP exceptions"""
@@ -39,7 +43,7 @@ def handle_auth_error(error):
             detail=str(error)
         )
 
-@router.post("/signup")
+@router.post("/signup", response_model=AuthResponse)
 def signup(auth: SignUpRequest):
     try:
         client = get_admin_client()
@@ -53,16 +57,39 @@ def signup(auth: SignUpRequest):
                 }
             }
         })
-        return res
+        
+        # Extract the session data
+        session = res.session
+        if not session:
+            raise HTTPException(status_code=500, detail="No session created during signup")
+            
+        return AuthResponse(
+            access_token=session.access_token,
+            token_type="bearer",
+            user=res.user.model_dump()
+        )
     except Exception as e:
         handle_auth_error(e)
 
-@router.post("/signin")
+@router.post("/signin", response_model=AuthResponse)
 def signin(auth: SignInRequest):
     try:
         client = get_admin_client()
-        res = client.auth.sign_in_with_password({"email": auth.email, "password": auth.password})
-        return res
+        res = client.auth.sign_in_with_password({
+            "email": auth.email, 
+            "password": auth.password
+        })
+        
+        # Extract the session data
+        session = res.session
+        if not session:
+            raise HTTPException(status_code=500, detail="No session created during signin")
+            
+        return AuthResponse(
+            access_token=session.access_token,
+            token_type="bearer",
+            user=res.user.model_dump()
+        )
     except Exception as e:
         handle_auth_error(e)
 

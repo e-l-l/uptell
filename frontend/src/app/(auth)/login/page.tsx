@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,9 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiClient } from "@/lib/api-client";
 import { Eye, EyeOff } from "lucide-react";
+import { isAuthenticatedAtom } from "@/lib/atoms/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isAuthenticated] = useAtom(isAuthenticatedAtom);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -26,6 +29,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -39,7 +49,7 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       await apiClient.signIn(formData.email, formData.password);
-      router.push("/dashboard"); // or wherever you want to redirect after login
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to sign in");
     } finally {

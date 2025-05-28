@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestHeaders } from "axios";
-import { tokenStorage } from "./token";
+import { getDefaultStore } from "jotai";
+import { tokenAtom, updateAuthState } from "./atoms/auth";
 
 interface ErrorResponse {
   detail?: string;
@@ -9,6 +10,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 class ApiClient {
   private client: AxiosInstance;
+  private store = getDefaultStore();
 
   constructor() {
     this.client = axios.create({
@@ -25,11 +27,11 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
-        const authHeader = tokenStorage.getAuthHeader();
-        if (Object.keys(authHeader).length > 0) {
+        const token = this.store.get(tokenAtom);
+        if (token) {
           config.headers = {
             ...config.headers,
-            ...authHeader,
+            Authorization: `${token.token_type} ${token.access_token}`,
           } as AxiosRequestHeaders;
         }
         return config;
@@ -45,7 +47,8 @@ class ApiClient {
       (error: AxiosError<ErrorResponse>) => {
         if (error.response?.status === 401) {
           // Handle unauthorized access
-          tokenStorage.removeToken();
+          this.store.set(tokenAtom, null);
+          updateAuthState(this.store.set, null);
           // You might want to redirect to login page here
           window.location.href = "/login";
         }
@@ -76,13 +79,20 @@ class ApiClient {
       email,
       password,
     });
-    const tokenData = response.data;
-    tokenStorage.setToken(tokenData);
-    return tokenData;
+    const { access_token, token_type, user } = response.data;
+
+    // Update token in localStorage via Jotai
+    this.store.set(tokenAtom, { access_token, token_type });
+
+    // Update auth state
+    updateAuthState(this.store.set, user);
+
+    return response.data;
   }
 
   signOut() {
-    tokenStorage.removeToken();
+    this.store.set(tokenAtom, null);
+    updateAuthState(this.store.set, null);
   }
 
   // Generic request methods

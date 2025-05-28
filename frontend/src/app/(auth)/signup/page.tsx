@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,9 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiClient } from "@/lib/api-client";
 import { Eye, EyeOff } from "lucide-react";
+import { isAuthenticatedAtom } from "@/lib/atoms/auth";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [isAuthenticated] = useAtom(isAuthenticatedAtom);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -30,6 +33,12 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
