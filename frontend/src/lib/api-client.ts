@@ -1,6 +1,11 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestHeaders } from "axios";
 import { getDefaultStore } from "jotai";
-import { tokenAtom, updateAuthState } from "./atoms/auth";
+import {
+  tokenAtom,
+  updateAuthState,
+  currentOrgAtom,
+  Organization,
+} from "./atoms/auth";
 
 interface ErrorResponse {
   detail?: string;
@@ -28,10 +33,12 @@ class ApiClient {
     this.client.interceptors.request.use(
       (config) => {
         const token = this.store.get(tokenAtom);
-        if (token) {
+
+        if (token?.access_token && token?.token_type) {
+          const authHeader = `${token.token_type} ${token.access_token}`;
           config.headers = {
             ...config.headers,
-            Authorization: `${token.token_type} ${token.access_token}`,
+            Authorization: authHeader,
           } as AxiosRequestHeaders;
         }
         return config;
@@ -49,10 +56,10 @@ class ApiClient {
           // Handle unauthorized access
           this.store.set(tokenAtom, null);
           updateAuthState(this.store.set, null);
+          this.store.set(currentOrgAtom, null);
           // You might want to redirect to login page here
           window.location.href = "/login";
         }
-        // Extract error message from response.detail if available
         const errorMessage = error.response?.data?.detail || error.message;
         return Promise.reject(new Error(errorMessage));
       }
@@ -79,12 +86,10 @@ class ApiClient {
       email,
       password,
     });
-    const { access_token, token_type, user } = response.data;
+    const { access_token, token_type, user, org } = response.data;
 
-    // Update token in localStorage via Jotai
     this.store.set(tokenAtom, { access_token, token_type });
-
-    // Update auth state
+    this.store.set(currentOrgAtom, org);
     updateAuthState(this.store.set, user);
 
     return response.data;
@@ -93,6 +98,7 @@ class ApiClient {
   signOut() {
     this.store.set(tokenAtom, null);
     updateAuthState(this.store.set, null);
+    this.store.set(currentOrgAtom, null);
   }
 
   // Organization methods
@@ -111,6 +117,10 @@ class ApiClient {
     return response.data;
   }
 
+  async setCurrentOrganization(org: Organization) {
+    this.store.set(currentOrgAtom, org);
+  }
+
   async createOrganizationInvite(
     orgId: string,
     email: string,
@@ -126,6 +136,9 @@ class ApiClient {
 
   async joinOrganization(code: string) {
     const response = await this.client.post(`/user-organizations/join/${code}`);
+    const { organization } = response.data;
+    // Set the joined organization as current
+    this.store.set(currentOrgAtom, organization);
     return response.data;
   }
 

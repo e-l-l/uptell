@@ -8,6 +8,11 @@ export interface User {
   lastName: string;
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+}
+
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -24,6 +29,12 @@ export const tokenAtom = atomWithStorage<{
   access_token: string;
   token_type: string;
 } | null>("auth_token", null);
+
+// Atom for storing current organization in localStorage
+export const currentOrgAtom = atomWithStorage<Organization | null>(
+  "current_org",
+  null
+);
 
 // Derived atom to check if user is authenticated
 export const isAuthenticatedAtom = atom((get) => get(authAtom).isAuthenticated);
@@ -56,4 +67,12 @@ export const updateAuthState = (
     user: simplifiedUser,
     isAuthenticated: true,
   });
+};
+
+// Helper function to update current organization
+export const updateCurrentOrg = (
+  set: (atom: typeof currentOrgAtom, value: Organization | null) => void,
+  org: Organization | null
+) => {
+  set(currentOrgAtom, org);
 };

@@ -24,6 +24,7 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: dict
+    org: dict
 
 def handle_auth_error(error):
     """Handle common Supabase auth errors and return appropriate HTTP exceptions"""
@@ -102,7 +103,8 @@ def signin(auth: SignInRequest):
         return AuthResponse(
             access_token=session.access_token,
             token_type="bearer",
-            user=res.user.model_dump()
+            user=res.user.model_dump(),
+            org=client.table("user_orgs").select("orgs(*)").eq("user_id", res.user.id).execute().data[0]["orgs"]
         )
     except Exception as e:
         handle_auth_error(e)
