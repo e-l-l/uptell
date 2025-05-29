@@ -53,7 +53,6 @@ export function ApplicationModal({
   application,
   onSubmit,
 }: ApplicationModalProps) {
-  console.log("application", application);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {

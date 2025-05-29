@@ -1,12 +1,65 @@
 from typing import Union
-
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
 from routes.auth.router import router as auth_router
 from routes.orgs.router import router as org_router
 from routes.apps.router import router as app_router
 from routes.incidents.router import router as incident_router
 from fastapi.middleware.cors import CORSMiddleware
+from gotrue.errors import AuthApiError, AuthInvalidJwtError
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
+
+# Global exception handlers
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Handle HTTP exceptions with consistent format"""
+    logger.warning(f"HTTP {exc.status_code}: {exc.detail} - {request.method} {request.url}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
+
+@app.exception_handler(AuthApiError)
+async def auth_api_error_handler(request: Request, exc: AuthApiError):
+    """Handle Supabase Auth API errors that might not be caught elsewhere"""
+    logger.error(f"Auth API Error: {str(exc)} - {request.method} {request.url}")
+    error_msg = str(exc)
+    
+    if "Invalid Refresh Token" in error_msg or "Refresh Token Not Found" in error_msg:
+        detail = "Your session has expired. Please sign in again."
+    elif "Invalid JWT" in error_msg or "JWT" in error_msg:
+        detail = "Invalid authentication token. Please sign in again."
+    else:
+        detail = "Authentication failed. Please sign in again."
+    
+    return JSONResponse(
+        status_code=401,
+        content={"detail": detail}
+    )
+
+@app.exception_handler(AuthInvalidJwtError)
+async def auth_invalid_token_handler(request: Request, exc: AuthInvalidJwtError):
+    """Handle invalid token errors"""
+    logger.error(f"Invalid Token Error: {str(exc)} - {request.method} {request.url}")
+    return JSONResponse(
+        status_code=401,
+        content={"detail": "Invalid authentication token. Please sign in again."}
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle unexpected exceptions"""
+    logger.error(f"Unexpected error: {str(exc)} - {request.method} {request.url}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred. Please try again later."}
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,6 +68,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # Include all routers
 app.include_router(auth_router)
 app.include_router(org_router)

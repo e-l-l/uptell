@@ -52,14 +52,41 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError<ErrorResponse>) => {
+        // Log error details for debugging
+        console.error("API Error:", {
+          status: error.response?.status,
+          message: error.response?.data?.detail || error.message,
+          url: error.config?.url,
+          method: error.config?.method,
+        });
+
         if (error.response?.status === 401) {
           // Handle unauthorized access
-          this.store.set(tokenAtom, null);
-          updateAuthState(this.store.set, null);
-          this.store.set(currentOrgAtom, null);
-          // You might want to redirect to login page here
-          window.location.href = "/login";
+          const errorDetail = error.response?.data?.detail || "";
+
+          // Check if it's a session expiry or invalid token
+          if (
+            errorDetail.includes("session has expired") ||
+            errorDetail.includes("Invalid authentication token") ||
+            errorDetail.includes("Missing authorization header")
+          ) {
+            // Clear auth state
+            this.store.set(tokenAtom, null);
+            updateAuthState(this.store.set, null);
+            this.store.set(currentOrgAtom, null);
+
+            // Only redirect if not already on auth pages
+            const currentPath = window.location.pathname;
+            if (
+              !currentPath.includes("/login") &&
+              !currentPath.includes("/signup") &&
+              !currentPath.includes("/join")
+            ) {
+              window.location.href = "/login";
+            }
+          }
         }
+
         const errorMessage = error.response?.data?.detail || error.message;
         return Promise.reject(new Error(errorMessage));
       }

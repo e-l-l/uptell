@@ -5,7 +5,6 @@ import {
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { GradButton } from "@/components/ui/grad-button";
 import {
   Table,
@@ -28,9 +27,15 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Incident, IncidentStatus } from "./types";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
-import { useIncidents } from "./services";
+import {
+  useCreateIncident,
+  useCreateIncidentLog,
+  useIncidents,
+} from "./services";
 import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
+import { IncidentModal } from "./incident-modal";
+import { toast } from "sonner";
 
 const getStatusColor = (status: IncidentStatus) => {
   switch (status) {
@@ -53,8 +58,11 @@ export default function IncidentsPage() {
     Incident | undefined
   >();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const currentOrg = useAtomValue(currentOrgAtom);
   const { data: incidents = [] } = useIncidents(currentOrg?.id ?? "");
+  const createIncident = useCreateIncident();
+  const createIncidentLog = useCreateIncidentLog();
 
   const handleEdit = (incident: Incident) => {
     setSelectedIncident(incident);
@@ -70,6 +78,41 @@ export default function IncidentsPage() {
       // TODO: Implement delete mutation
       setIncidentToDelete(null);
     }
+  };
+
+  const handleSubmit = (data: {
+    title: string;
+    description: string;
+    app_id: string;
+    status: IncidentStatus;
+  }) => {
+    createIncident.mutate(
+      {
+        title: data.title,
+        description: data.description,
+        org_id: currentOrg?.id ?? "",
+        app_id: data.app_id,
+        status: data.status,
+      },
+      {
+        onSuccess: (data) => {
+          const log = {
+            incident_id: data.id,
+            status: data.status,
+            message: data.description,
+          };
+          createIncidentLog.mutate(log, {
+            onSuccess: () => {
+              toast.success("Incident logged successfully");
+              setIsModalOpen(false);
+            },
+            onError: () => {
+              toast.error("Failed to log incident");
+            },
+          });
+        },
+      }
+    );
   };
 
   const EmptyState = () => (
@@ -114,80 +157,73 @@ export default function IncidentsPage() {
             Report Incident
           </GradButton>
         </div>
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {incidents.map((incident: Incident) => (
-                  <TableRow key={incident.id}>
-                    <TableCell className="font-medium">
-                      {incident.name}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
-                          incident.status as IncidentStatus
-                        )}`}
-                      >
-                        {incident.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {incidents.map((incident: Incident) => (
+              <TableRow key={incident.id}>
+                <TableCell className="font-medium">{incident.title}</TableCell>
+                <TableCell>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
+                      incident.status as IncidentStatus
+                    )}`}
+                  >
+                    {incident.status}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(incident)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog
+                      open={incidentToDelete === incident.id}
+                      onOpenChange={(open) =>
+                        !open && setIncidentToDelete(null)
+                      }
+                    >
+                      <AlertDialogTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(incident)}
+                          onClick={() => handleDelete(incident.id)}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                        <AlertDialog
-                          open={incidentToDelete === incident.id}
-                          onOpenChange={(open) =>
-                            !open && setIncidentToDelete(null)
-                          }
-                        >
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(incident.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will
-                                permanently delete the incident and all its
-                                associated data.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={confirmDelete}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete the incident and all its associated data.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmDelete}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     );
   };
@@ -197,6 +233,11 @@ export default function IncidentsPage() {
       <div className="flex flex-1 flex-col gap-4 p-4">
         {incidents.length === 0 ? <EmptyState /> : <IncidentsTable />}
       </div>
+      <IncidentModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSubmit={handleSubmit}
+      />
       <Toaster />
     </div>
   );

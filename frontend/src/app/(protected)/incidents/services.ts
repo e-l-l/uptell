@@ -1,20 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Incident } from "./types";
+import {
+  CreateIncidentData,
+  CreateIncidentLogData,
+  Incident,
+  IncidentLog,
+  UpdateIncidentData,
+} from "./types";
 import { apiClient } from "@/lib/api-client";
-
-interface CreateIncidentData {
-  title: string;
-  description: string;
-  application_id: number;
-  status: string;
-}
-
-interface UpdateIncidentData {
-  title?: string;
-  description?: string;
-  status?: string;
-}
 
 export const useIncidents = (orgId: string) => {
   return useQuery({
@@ -81,6 +74,31 @@ export const useDeleteIncident = () => {
     },
     onError: () => {
       toast.error("Failed to delete incident");
+    },
+  });
+};
+
+// Logs
+export const useIncidentLogs = (incidentId: string) => {
+  return useQuery({
+    queryKey: ["incident-logs", incidentId],
+    queryFn: async () => {
+      return apiClient.get<IncidentLog[]>(`/incidents/${incidentId}/logs`);
+    },
+  });
+};
+
+export const useCreateIncidentLog = () => {
+  return useMutation({
+    mutationFn: async (data: CreateIncidentLogData) => {
+      return apiClient.post<IncidentLog>(
+        `/incidents/${data.incident_id}/logs`,
+        {
+          status: data.status,
+          message: data.message,
+          time: new Date().toISOString(),
+        }
+      );
     },
   });
 };
