@@ -38,6 +38,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const getStatusColor = (status: ApplicationStatus) => {
+  switch (status) {
+    case "Operational":
+      return "bg-green-100 text-green-800";
+    case "Degraded Performance":
+      return "bg-yellow-100 text-yellow-800";
+    case "Partial Outage":
+      return "bg-orange-100 text-orange-800";
+    case "Unknown":
+      return "bg-gray-100 text-gray-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
 export default function ApplicationsPage() {
   const currentOrg = useAtomValue(currentOrgAtom);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,21 +93,6 @@ export default function ApplicationsPage() {
     if (appToDelete) {
       deleteApplication.mutate(appToDelete);
       setAppToDelete(null);
-    }
-  };
-
-  const getStatusColor = (status: ApplicationStatus) => {
-    switch (status) {
-      case "Operational":
-        return "bg-green-100 text-green-800";
-      case "Degraded Performance":
-        return "bg-yellow-100 text-yellow-800";
-      case "Partial Outage":
-        return "bg-orange-100 text-orange-800";
-      case "Unknown":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -211,16 +211,7 @@ export default function ApplicationsPage() {
   );
 
   return (
-    <SidebarInset>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-        </div>
-      </header>
+    <div className="flex flex-col gap-4">
       <div className="flex flex-1 flex-col gap-4 p-4">
         {applications.length === 0 ? <EmptyState /> : <ApplicationsTable />}
       </div>
@@ -231,6 +222,6 @@ export default function ApplicationsPage() {
         onSubmit={handleAddEdit}
       />
       <Toaster />
-    </SidebarInset>
+    </div>
   );
 }

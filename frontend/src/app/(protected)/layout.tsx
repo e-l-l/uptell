@@ -1,5 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default async function ProtectedLayout({
   children,
@@ -9,7 +9,7 @@ export default async function ProtectedLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      {children}
+      <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   );
 }

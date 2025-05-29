@@ -11,14 +11,16 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" className="border-none" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="flex flex-row items-center">
+        <SidebarTrigger />
         <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
-          <h2 className="text-lg font-semibold">Uptell</h2>
+          <h2 className="text-lg font-semibold">uptell</h2>
         </div>
       </SidebarHeader>
       <SidebarContent>

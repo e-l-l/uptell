@@ -10,6 +10,4 @@ export interface Application {
   name: string;
   status: ApplicationStatus;
   org_id: string;
-  created_at: string;
-  updated_at: string;
 }
