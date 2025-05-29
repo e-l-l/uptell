@@ -16,13 +16,13 @@ interface UpdateIncidentData {
   status?: string;
 }
 
-export const useIncidents = (applicationId: number | undefined) => {
+export const useIncidents = (orgId: string) => {
   return useQuery({
-    queryKey: ["incidents", applicationId],
+    queryKey: ["incidents", orgId],
     queryFn: async () => {
-      if (!applicationId) return [];
+      if (!orgId) return [];
       return apiClient.get<Incident[]>("/incidents", {
-        application_id: applicationId,
+        org_id: orgId,
       });
     },
   });

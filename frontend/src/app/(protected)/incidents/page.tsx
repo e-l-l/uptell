@@ -28,6 +28,9 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Incident, IncidentStatus } from "./types";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { useIncidents } from "./services";
+import { useAtomValue } from "jotai";
+import { currentOrgAtom } from "@/lib/atoms/auth";
 
 const getStatusColor = (status: IncidentStatus) => {
   switch (status) {
@@ -50,6 +53,8 @@ export default function IncidentsPage() {
     Incident | undefined
   >();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const currentOrg = useAtomValue(currentOrgAtom);
+  const { data: incidents = [] } = useIncidents(currentOrg?.id ?? "");
 
   const handleEdit = (incident: Incident) => {
     setSelectedIncident(incident);
@@ -120,7 +125,7 @@ export default function IncidentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[].map((incident: Incident) => (
+                {incidents.map((incident: Incident) => (
                   <TableRow key={incident.id}>
                     <TableCell className="font-medium">
                       {incident.name}
@@ -190,7 +195,7 @@ export default function IncidentsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {false ? <EmptyState /> : <IncidentsTable />}
+        {incidents.length === 0 ? <EmptyState /> : <IncidentsTable />}
       </div>
       <Toaster />
     </div>
