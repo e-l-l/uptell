@@ -27,14 +27,14 @@ def list_incidents(org_id: str = Query(...), supabase=Depends(get_supabase)):
     return res.data
 
 @router.get("/{incident_id}", response_model=Incident)
-def get_incident(incident_id: int, supabase=Depends(get_supabase)):
+def get_incident(incident_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("incidents").select("*").eq("id", incident_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Incident not found")
     return res.data[0]
 
 @router.patch("/{incident_id}", response_model=Incident)
-def update_incident(incident_id: int, payload: IncidentUpdate, supabase=Depends(get_supabase)):
+def update_incident(incident_id: str, payload: IncidentUpdate, supabase=Depends(get_supabase)):
     update_data = {k: v for k, v in payload.dict().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -45,7 +45,7 @@ def update_incident(incident_id: int, payload: IncidentUpdate, supabase=Depends(
     return res.data[0]
 
 @router.delete("/{incident_id}")
-def delete_incident(incident_id: int, supabase=Depends(get_supabase)):
+def delete_incident(incident_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("incidents").delete().eq("id", incident_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Incident not found")

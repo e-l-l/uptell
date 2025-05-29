@@ -30,12 +30,14 @@ import { Toaster } from "@/components/ui/sonner";
 import {
   useCreateIncident,
   useCreateIncidentLog,
+  useDeleteIncident,
   useIncidents,
 } from "./services";
 import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { IncidentModal } from "./incident-modal";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const getStatusColor = (status: IncidentStatus) => {
   switch (status) {
@@ -63,10 +65,11 @@ export default function IncidentsPage() {
   const { data: incidents = [] } = useIncidents(currentOrg?.id ?? "");
   const createIncident = useCreateIncident();
   const createIncidentLog = useCreateIncidentLog();
+  const deleteIncident = useDeleteIncident();
 
-  const handleEdit = (incident: Incident) => {
-    setSelectedIncident(incident);
-    setIsModalOpen(true);
+  const router = useRouter();
+  const onRowClick = (incident: Incident) => {
+    router.push(`/incidents/${incident.id}`);
   };
 
   const handleDelete = (incidentId: string) => {
@@ -75,7 +78,15 @@ export default function IncidentsPage() {
 
   const confirmDelete = () => {
     if (incidentToDelete) {
-      // TODO: Implement delete mutation
+      deleteIncident.mutate(incidentToDelete, {
+        onSuccess: () => {
+          toast.success("Incident deleted successfully");
+          setIncidentToDelete(null);
+        },
+        onError: () => {
+          toast.error("Failed to delete incident");
+        },
+      });
       setIncidentToDelete(null);
     }
   };
@@ -167,7 +178,11 @@ export default function IncidentsPage() {
           </TableHeader>
           <TableBody>
             {incidents.map((incident: Incident) => (
-              <TableRow key={incident.id}>
+              <TableRow
+                key={incident.id}
+                onClick={() => onRowClick(incident)}
+                className="cursor-pointer"
+              >
                 <TableCell className="font-medium">{incident.title}</TableCell>
                 <TableCell>
                   <span
@@ -179,46 +194,43 @@ export default function IncidentsPage() {
                   </span>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(incident)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog
-                      open={incidentToDelete === incident.id}
-                      onOpenChange={(open) =>
-                        !open && setIncidentToDelete(null)
-                      }
-                    >
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(incident.id)}
+                  <AlertDialog
+                    open={incidentToDelete === incident.id}
+                    onOpenChange={(open) => !open && setIncidentToDelete(null)}
+                  >
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(incident.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete the incident and all its associated data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmDelete();
+                          }}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete the incident and all its associated data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={confirmDelete}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}

@@ -21,6 +21,16 @@ export const useIncidents = (orgId: string) => {
   });
 };
 
+export const useIncident = (incidentId: string) => {
+  return useQuery({
+    queryKey: ["incident", incidentId],
+    queryFn: async () => {
+      return apiClient.get<Incident>(`/incidents/${incidentId}`);
+    },
+    enabled: !!incidentId,
+  });
+};
+
 export const useCreateIncident = () => {
   const queryClient = useQueryClient();
 
@@ -65,7 +75,7 @@ export const useDeleteIncident = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       return apiClient.delete(`/incidents/${id}`);
     },
     onSuccess: () => {
