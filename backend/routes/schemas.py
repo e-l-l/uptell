@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Literal, Optional, List
 from datetime import datetime
-from uuid import UUID
 
 class OrganizationBase(BaseModel):
     name: str
@@ -13,7 +12,7 @@ class OrganizationUpdate(OrganizationBase):
     name: Optional[str] = None
 
 class Organization(OrganizationBase):
-    id: UUID
+    id: str
     created_at: datetime
 
     class Config:
@@ -21,17 +20,17 @@ class Organization(OrganizationBase):
 
 class TeamBase(BaseModel):
     name: str
-    org_id: UUID
+    org_id: str
 
 class TeamCreate(TeamBase):
     pass
 
 class TeamUpdate(BaseModel):
     name: Optional[str] = None
-    org_id: Optional[UUID] = None
+    org_id: Optional[str] = None
 
 class Team(TeamBase):
-    id: UUID
+    id: str
     created_at: datetime
 
     class Config:
@@ -39,7 +38,7 @@ class Team(TeamBase):
 
 class ApplicationBase(BaseModel):
     name: str
-    org_id: UUID
+    org_id: str
     status: str
 
 class ApplicationCreate(ApplicationBase):
@@ -47,19 +46,17 @@ class ApplicationCreate(ApplicationBase):
 
 class ApplicationUpdate(BaseModel):
     name: Optional[str] = None
-    org_id: Optional[UUID] = None
+    org_id: Optional[str] = None
     status: Optional[str] = None
 
 class Application(ApplicationBase):
-    id: UUID
-    created_at: datetime
-
+    id: str
     class Config:
         from_attributes = True
 
 class IncidentBase(BaseModel):
-    org_id: UUID
-    app_id: UUID
+    org_id: str
+    app_id: str
     status: Literal["Reported", "Investigating", "Identified", "Fixed"]
     description: str
 
@@ -67,13 +64,13 @@ class IncidentCreate(IncidentBase):
     pass
 
 class IncidentUpdate(BaseModel):
-    org_id: Optional[UUID] = None
-    app_id: Optional[UUID] = None
+    org_id: Optional[str] = None
+    app_id: Optional[str] = None
     status: Optional[Literal["Reported", "Investigating", "Identified", "Fixed"]] = None
     description: Optional[str] = None
 
 class Incident(IncidentBase):
-    id: UUID
+    id: str
     time: datetime
 
     class Config:
@@ -91,16 +88,16 @@ class LogUpdate(BaseModel):
     message: Optional[str] = None
 
 class Log(LogBase):
-    id: UUID
-    incident_id: UUID
+    id: str
+    incident_id: str
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 class UserOrganizationBase(BaseModel):
-    user_id: UUID
-    org_id: UUID
+    user_id: str
+    org_id: str
     role: Literal["owner", "member"]
 
 class UserOrganizationCreate(UserOrganizationBase):
@@ -110,14 +107,14 @@ class UserOrganizationUpdate(BaseModel):
     role: Optional[Literal["owner", "member"]] = None
 
 class UserOrganization(UserOrganizationBase):
-    id: UUID
+    id: str
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 class OrganizationInviteBase(BaseModel):
-    org_id: UUID
+    org_id: str
     email: str
     role: Literal["owner", "member"]
     code: str
@@ -126,7 +123,7 @@ class OrganizationInviteCreate(OrganizationInviteBase):
     pass
 
 class OrganizationInvite(OrganizationInviteBase):
-    id: UUID
+    id: str
     created_at: datetime
     expires_at: datetime
 
