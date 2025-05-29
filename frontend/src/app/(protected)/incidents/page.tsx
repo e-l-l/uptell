@@ -23,7 +23,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Incident, IncidentStatus } from "./types";
 import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
@@ -38,6 +38,7 @@ import { currentOrgAtom } from "@/lib/atoms/auth";
 import { IncidentModal } from "./incident-modal";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { LoadingSpinner } from "@/components/spinner";
 
 const getStatusColor = (status: IncidentStatus) => {
   switch (status) {
@@ -62,7 +63,9 @@ export default function IncidentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const currentOrg = useAtomValue(currentOrgAtom);
-  const { data: incidents = [] } = useIncidents(currentOrg?.id ?? "");
+  const { data: incidents = [], isLoading: incidentsLoading } = useIncidents(
+    currentOrg?.id ?? ""
+  );
   const createIncident = useCreateIncident();
   const createIncidentLog = useCreateIncidentLog();
   const deleteIncident = useDeleteIncident();
@@ -126,6 +129,13 @@ export default function IncidentsPage() {
     );
   };
 
+  const LoadingState = () => (
+    <div className="flex flex-col items-center justify-center pt-16 space-y-4">
+      <LoadingSpinner className="w-96" />
+      <p className="text-muted-foreground">Loading incidents...</p>
+    </div>
+  );
+
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-start pt-16">
       <div className="flex flex-col items-center gap-6 max-w-md text-center">
@@ -145,6 +155,7 @@ export default function IncidentsPage() {
           size="lg"
           className="gap-2"
           onClick={() => setIsModalOpen(true)}
+          disabled={createIncident.isPending}
         >
           <Plus className="h-5 w-5" />
           Report Incident
@@ -163,7 +174,11 @@ export default function IncidentsPage() {
               Manage your incidents and their status.
             </p>
           </div>
-          <GradButton className="gap-2" onClick={() => setIsModalOpen(true)}>
+          <GradButton
+            className="gap-2"
+            onClick={() => setIsModalOpen(true)}
+            disabled={createIncident.isPending}
+          >
             <Plus className="h-4 w-4" />
             Report Incident
           </GradButton>
@@ -206,6 +221,7 @@ export default function IncidentsPage() {
                           e.stopPropagation();
                           handleDelete(incident.id);
                         }}
+                        disabled={deleteIncident.isPending}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -225,8 +241,9 @@ export default function IncidentsPage() {
                             e.stopPropagation();
                             confirmDelete();
                           }}
+                          disabled={deleteIncident.isPending}
                         >
-                          Delete
+                          {deleteIncident.isPending ? "Deleting..." : "Delete"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -243,12 +260,19 @@ export default function IncidentsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {incidents.length === 0 ? <EmptyState /> : <IncidentsTable />}
+        {incidentsLoading ? (
+          <LoadingState />
+        ) : incidents.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <IncidentsTable />
+        )}
       </div>
       <IncidentModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSubmit}
+        isLoading={createIncident.isPending || createIncidentLog.isPending}
       />
       <Toaster />
     </div>

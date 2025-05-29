@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { LoadingSpinner } from "@/components/spinner";
 
 const getStatusColor = (status: ApplicationStatus) => {
   switch (status) {
@@ -56,7 +57,8 @@ export default function ApplicationsPage() {
   const [selectedApp, setSelectedApp] = useState<Application | undefined>();
   const [appToDelete, setAppToDelete] = useState<string | null>(null);
 
-  const { data: applications = [] } = useApplications(currentOrg?.id);
+  const { data: applications = [], isLoading: applicationsLoading } =
+    useApplications(currentOrg?.id);
   const createApplication = useCreateApplication();
   const updateApplication = useUpdateApplication();
   const deleteApplication = useDeleteApplication();
@@ -93,6 +95,13 @@ export default function ApplicationsPage() {
     }
   };
 
+  const LoadingState = () => (
+    <div className="flex flex-col items-center justify-center pt-16 space-y-4">
+      <LoadingSpinner className="w-96" />
+      <p className="text-muted-foreground">Loading applications...</p>
+    </div>
+  );
+
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-start pt-16">
       <div className="flex flex-col items-center gap-6 max-w-md text-center">
@@ -112,6 +121,7 @@ export default function ApplicationsPage() {
           size="lg"
           className="gap-2"
           onClick={() => setIsModalOpen(true)}
+          disabled={createApplication.isPending}
         >
           <Plus className="h-5 w-5" />
           Add Application
@@ -129,7 +139,11 @@ export default function ApplicationsPage() {
             Manage your applications and their configurations.
           </p>
         </div>
-        <GradButton className="gap-2" onClick={() => setIsModalOpen(true)}>
+        <GradButton
+          className="gap-2"
+          onClick={() => setIsModalOpen(true)}
+          disabled={createApplication.isPending}
+        >
           <Plus className="h-4 w-4" />
           Add Application
         </GradButton>
@@ -161,6 +175,7 @@ export default function ApplicationsPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEdit(app)}
+                    disabled={updateApplication.isPending}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -173,6 +188,7 @@ export default function ApplicationsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(app.id)}
+                        disabled={deleteApplication.isPending}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -187,8 +203,13 @@ export default function ApplicationsPage() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete}>
-                          Delete
+                        <AlertDialogAction
+                          onClick={confirmDelete}
+                          disabled={deleteApplication.isPending}
+                        >
+                          {deleteApplication.isPending
+                            ? "Deleting..."
+                            : "Delete"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -205,13 +226,20 @@ export default function ApplicationsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-1 flex-col gap-4 p-4">
-        {applications.length === 0 ? <EmptyState /> : <ApplicationsTable />}
+        {applicationsLoading ? (
+          <LoadingState />
+        ) : applications.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <ApplicationsTable />
+        )}
       </div>
       <ApplicationModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         application={selectedApp}
         onSubmit={handleAddEdit}
+        isLoading={createApplication.isPending || updateApplication.isPending}
       />
       <Toaster />
     </div>

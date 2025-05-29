@@ -48,12 +48,14 @@ interface IncidentModalProps {
     app_id: string;
     status: IncidentStatus;
   }) => void;
+  isLoading?: boolean;
 }
 
 export function IncidentModal({
   open,
   onOpenChange,
   onSubmit,
+  isLoading = false,
 }: IncidentModalProps) {
   const currentOrg = useAtomValue(currentOrgAtom);
   const { data: applications = [] } = useApplications(currentOrg?.id);
@@ -172,10 +174,13 @@ export function IncidentModal({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
-              <Button type="submit">Create</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create"}
+              </Button>
             </div>
           </form>
         </Form>

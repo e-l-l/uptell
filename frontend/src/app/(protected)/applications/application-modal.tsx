@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Application, ApplicationStatus } from "./types";
 import React from "react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -45,6 +46,7 @@ interface ApplicationModalProps {
   onOpenChange: (open: boolean) => void;
   application?: Application;
   onSubmit: (data: { name: string; status: ApplicationStatus }) => void;
+  isLoading: boolean;
 }
 
 export function ApplicationModal({
@@ -52,6 +54,7 @@ export function ApplicationModal({
   onOpenChange,
   application,
   onSubmit,
+  isLoading,
 }: ApplicationModalProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -143,10 +146,14 @@ export function ApplicationModal({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
-              <Button type="submit">{application ? "Update" : "Create"}</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {application ? "Update" : "Create"}
+              </Button>
             </div>
           </form>
         </Form>
