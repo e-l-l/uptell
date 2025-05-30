@@ -26,6 +26,7 @@ export interface UpdateIncidentData {
   title?: string;
   description?: string;
   status?: string;
+  app_id?: string;
 }
 
 export interface IncidentLog {

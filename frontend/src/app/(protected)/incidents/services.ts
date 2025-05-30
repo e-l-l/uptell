@@ -56,13 +56,16 @@ export const useUpdateIncident = () => {
       id,
       data,
     }: {
-      id: number;
+      id: string;
       data: UpdateIncidentData;
     }) => {
       return apiClient.patch<Incident>(`/incidents/${id}`, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      queryClient.invalidateQueries({
+        queryKey: ["incident", variables.id.toString()],
+      });
       toast.success("Incident updated successfully");
     },
     onError: () => {

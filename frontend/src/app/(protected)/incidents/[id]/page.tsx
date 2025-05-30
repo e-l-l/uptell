@@ -6,6 +6,7 @@ import {
   useIncident,
   useIncidentLogs,
   useCreateIncidentLog,
+  useUpdateIncident,
 } from "../services";
 import { useApplications } from "../../applications/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,10 +39,14 @@ import {
   AlertCircleIcon,
   InfoIcon,
   PlusIcon,
+  EditIcon,
+  SaveIcon,
+  XIcon,
 } from "lucide-react";
 import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { IncidentStatus } from "../types";
+import { Input } from "@/components/ui/input";
 
 const statusColors = {
   Reported: "bg-red-500/10 text-red-700 border-red-200",
@@ -91,6 +96,7 @@ export default function IncidentDetailsPage() {
     useIncidentLogs(incidentId);
   const { data: applications = [] } = useApplications(currentOrg?.id);
   const createLogMutation = useCreateIncidentLog();
+  const updateIncidentMutation = useUpdateIncident();
 
   // Add log form state
   const [isAddLogOpen, setIsAddLogOpen] = useState(false);
@@ -99,10 +105,30 @@ export default function IncidentDetailsPage() {
     message: "",
   });
 
+  // Edit form state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    app_id: "",
+  });
+
+  // Initialize edit form when incident data loads
+  React.useEffect(() => {
+    if (incident) {
+      setEditForm({
+        title: incident.title,
+        description: incident.description,
+        app_id: incident.app_id,
+      });
+    }
+  }, [incident]);
+
   // Find the application name based on app_id
   const applicationName =
-    applications.find((app) => app.id === incident?.app_id)?.name ||
-    incident?.app_id;
+    applications.find(
+      (app) => app.id === (isEditing ? editForm.app_id : incident?.app_id)
+    )?.name || (isEditing ? editForm.app_id : incident?.app_id);
 
   // Handle add log form submission
   const handleAddLog = async () => {
@@ -122,6 +148,39 @@ export default function IncidentDetailsPage() {
       setIsAddLogOpen(false);
     } catch (error) {
       // Error is handled by the mutation's onError callback
+    }
+  };
+
+  // Handle edit mode toggle
+  const handleEditToggle = () => {
+    if (isEditing && incident) {
+      // Reset form to original values when canceling
+      setEditForm({
+        title: incident.title,
+        description: incident.description,
+        app_id: incident.app_id,
+      });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  // Handle save changes
+  const handleSaveChanges = () => {
+    if (!incident) return;
+
+    try {
+      updateIncidentMutation.mutate({
+        id: incident.id,
+        data: {
+          title: editForm.title.trim(),
+          description: editForm.description.trim(),
+          app_id: editForm.app_id,
+        },
+      });
+      setIsEditing(false);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      // Keep editing mode active on error so user can retry
     }
   };
 
@@ -175,11 +234,29 @@ export default function IncidentDetailsPage() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            {incident.title}
-          </h1>
-          <p className="text-muted-foreground mt-1">Incident #{incident.id}</p>
+        <div className="flex-1">
+          {isEditing ? (
+            <div className="space-y-2">
+              <Input
+                value={editForm.title}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, title: e.target.value }))
+                }
+                className="md:text-3xl font-bold bg-transparent border-border focus-visible:ring-0 focus-visible:ring-offset-0"
+                placeholder="Enter incident title"
+              />
+              <p className="text-muted-foreground">Incident #{incident.id}</p>
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {incident.title}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Incident #{incident.id}
+              </p>
+            </div>
+          )}
         </div>
         <Badge
           className={`px-3 py-1 ${
@@ -208,9 +285,24 @@ export default function IncidentDetailsPage() {
                 <h4 className="font-semibold text-foreground mb-2">
                   Description
                 </h4>
-                <p className="text-muted-foreground leading-relaxed">
-                  {incident.description}
-                </p>
+                {isEditing ? (
+                  <Textarea
+                    value={editForm.description}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    placeholder="Describe the incident details"
+                    rows={4}
+                    className="resize-none"
+                  />
+                ) : (
+                  <p className="text-muted-foreground leading-relaxed">
+                    {incident.description}
+                  </p>
+                )}
               </div>
 
               <Separator />
@@ -220,7 +312,27 @@ export default function IncidentDetailsPage() {
                   <h4 className="font-semibold text-foreground mb-2">
                     Application
                   </h4>
-                  <p className="text-muted-foreground">{applicationName}</p>
+                  {isEditing ? (
+                    <Select
+                      value={editForm.app_id}
+                      onValueChange={(value) =>
+                        setEditForm((prev) => ({ ...prev, app_id: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select application" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {applications.map((app) => (
+                          <SelectItem key={app.id} value={app.id}>
+                            {app.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-muted-foreground">{applicationName}</p>
+                  )}
                 </div>
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">
@@ -245,6 +357,39 @@ export default function IncidentDetailsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {isEditing ? (
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveChanges}
+                disabled={
+                  updateIncidentMutation.isPending ||
+                  !editForm.title.trim() ||
+                  !editForm.description.trim() ||
+                  !editForm.app_id
+                }
+                className="flex-1"
+              >
+                <SaveIcon className="w-4 h-4 mr-2" />
+                {updateIncidentMutation.isPending
+                  ? "Saving..."
+                  : "Save Changes"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleEditToggle}
+                className="flex-1"
+              >
+                <XIcon className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={handleEditToggle}>
+              <EditIcon className="w-4 h-4 mr-2" />
+              Edit Incident
+            </Button>
+          )}
         </div>
 
         {/* Right column - Timeline */}
