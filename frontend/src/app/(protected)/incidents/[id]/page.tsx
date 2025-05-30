@@ -1,22 +1,47 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams } from "next/navigation";
-import { useIncident, useIncidentLogs } from "../services";
+import {
+  useIncident,
+  useIncidentLogs,
+  useCreateIncidentLog,
+} from "../services";
 import { useApplications } from "../../applications/services";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   CalendarIcon,
   ClockIcon,
   AlertCircleIcon,
   InfoIcon,
+  PlusIcon,
 } from "lucide-react";
 import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
+import { IncidentStatus } from "../types";
 
 const statusColors = {
   Reported: "bg-red-500/10 text-red-700 border-red-200",
@@ -65,11 +90,40 @@ export default function IncidentDetailsPage() {
   const { data: logs = [], isLoading: logsLoading } =
     useIncidentLogs(incidentId);
   const { data: applications = [] } = useApplications(currentOrg?.id);
+  const createLogMutation = useCreateIncidentLog();
+
+  // Add log form state
+  const [isAddLogOpen, setIsAddLogOpen] = useState(false);
+  const [logForm, setLogForm] = useState({
+    status: "" as IncidentStatus | "",
+    message: "",
+  });
 
   // Find the application name based on app_id
   const applicationName =
     applications.find((app) => app.id === incident?.app_id)?.name ||
     incident?.app_id;
+
+  // Handle add log form submission
+  const handleAddLog = async () => {
+    if (!logForm.status || !logForm.message.trim()) {
+      return;
+    }
+
+    try {
+      await createLogMutation.mutateAsync({
+        incident_id: incidentId,
+        status: logForm.status,
+        message: logForm.message.trim(),
+      });
+
+      // Reset form and close dialog
+      setLogForm({ status: "", message: "" });
+      setIsAddLogOpen(false);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+    }
+  };
 
   if (incidentLoading) {
     return (
@@ -284,6 +338,90 @@ export default function IncidentDetailsPage() {
                   </div>
                 )}
               </ScrollArea>
+
+              {/* Add Log Button and Dialog */}
+              <Separator className="my-4" />
+
+              <Dialog open={isAddLogOpen} onOpenChange={setIsAddLogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full" variant="outline">
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Add Log Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Log Entry</DialogTitle>
+                    <DialogDescription>
+                      Add a new status update to this incident's timeline.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={logForm.status}
+                        onValueChange={(value: IncidentStatus) =>
+                          setLogForm((prev) => ({ ...prev, status: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Reported">Reported</SelectItem>
+                          <SelectItem value="Investigating">
+                            Investigating
+                          </SelectItem>
+                          <SelectItem value="Identified">Identified</SelectItem>
+                          <SelectItem value="Fixed">Fixed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Message</Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Describe the status update..."
+                        value={logForm.message}
+                        onChange={(e) =>
+                          setLogForm((prev) => ({
+                            ...prev,
+                            message: e.target.value,
+                          }))
+                        }
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setLogForm({ status: "", message: "" });
+                        setIsAddLogOpen(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleAddLog}
+                      disabled={
+                        !logForm.status ||
+                        !logForm.message.trim() ||
+                        createLogMutation.isPending
+                      }
+                    >
+                      {createLogMutation.isPending
+                        ? "Adding..."
+                        : "Add Log Entry"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         </div>

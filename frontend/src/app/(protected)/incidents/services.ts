@@ -99,6 +99,8 @@ export const useIncidentLogs = (incidentId: string) => {
 };
 
 export const useCreateIncidentLog = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: CreateIncidentLogData) => {
       return apiClient.post<IncidentLog>(
@@ -109,6 +111,15 @@ export const useCreateIncidentLog = () => {
           time: new Date().toISOString(),
         }
       );
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["incident-logs", variables.incident_id],
+      });
+      toast.success("Log entry added successfully");
+    },
+    onError: () => {
+      toast.error("Failed to add log entry");
     },
   });
 };
