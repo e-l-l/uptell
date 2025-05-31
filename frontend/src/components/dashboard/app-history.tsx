@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, TrendingUp, Activity } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -27,6 +21,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { AppHistoryData, AppHistoryProps } from "./types";
 import { apiClient } from "@/lib/api-client";
+import { getAppChartColors } from "@/app/(protected)/applications/utils";
+import { ApplicationStatus } from "@/app/(protected)/applications/types";
 
 // Status to numerical value mapping for charting
 const statusValues = {
@@ -35,15 +31,6 @@ const statusValues = {
   "Partial Outage": 2,
   "Major Outage": 1,
   Unknown: 0,
-};
-
-// Status colors for the chart
-const statusColors = {
-  Operational: "bg-green-500",
-  "Degraded Performance": "bg-yellow-400",
-  "Partial Outage": "bg-orange-500",
-  "Major Outage": "bg-red-500",
-  Unknown: "bg-gray-400",
 };
 
 export function AppHistory({ app }: AppHistoryProps) {
@@ -160,7 +147,12 @@ export function AppHistory({ app }: AppHistoryProps) {
     totalDuration > 0
       ? Math.round(
           (segments
-            .filter((seg) => seg.status === "Operational")
+            .filter(
+              (seg) =>
+                seg.status === "Operational" ||
+                seg.status === "Degraded Performance" ||
+                seg.status === "Partial Outage"
+            )
             .reduce((acc, seg) => acc + seg.duration, 0) /
             totalDuration) *
             100
@@ -215,11 +207,7 @@ export function AppHistory({ app }: AppHistoryProps) {
                 <div
                   className={cn(
                     "w-3 h-3 rounded-full",
-                    currentStatus === "Operational" && "bg-green-500",
-                    currentStatus === "Degraded Performance" && "bg-yellow-400",
-                    currentStatus === "Partial Outage" && "bg-orange-500",
-                    currentStatus === "Major Outage" && "bg-red-500",
-                    currentStatus === "Unknown" && "bg-gray-400"
+                    getAppChartColors(currentStatus as ApplicationStatus)
                   )}
                 />
                 <span className="text-sm font-medium">
@@ -321,9 +309,9 @@ export function AppHistory({ app }: AppHistoryProps) {
               <div className="flex w-full h-8 rounded-lg overflow-hidden">
                 {segments.map((segment, i) => {
                   const widthPercent = (segment.duration / totalDuration) * 100;
-                  const statusColorClass =
-                    statusColors[segment.status as keyof typeof statusColors] ||
-                    statusColors.Unknown;
+                  const statusColorClass = getAppChartColors(
+                    segment.status as ApplicationStatus
+                  );
 
                   return (
                     <div
@@ -344,7 +332,7 @@ export function AppHistory({ app }: AppHistoryProps) {
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>{format(start, "MMM dd, yyyy HH:mm")}</span>
               <div className="flex items-center gap-4">
-                {Object.entries(statusColors).map(([status, colorClass]) => {
+                {Object.entries(statusValues).map(([status, _]) => {
                   const statusSegments = segments.filter(
                     (seg) => seg.status === status
                   );
@@ -361,7 +349,11 @@ export function AppHistory({ app }: AppHistoryProps) {
 
                   return (
                     <div key={status} className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-sm ${colorClass}`} />
+                      <div
+                        className={`w-3 h-3 rounded-sm ${getAppChartColors(
+                          status as ApplicationStatus
+                        )}`}
+                      />
                       <div className="flex flex-col">
                         <span className="font-medium">{status}</span>
                         <span className="text-muted-foreground text-xs">

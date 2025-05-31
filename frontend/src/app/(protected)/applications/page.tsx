@@ -35,21 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "@/components/spinner";
-
-const getStatusColor = (status: ApplicationStatus) => {
-  switch (status) {
-    case "Operational":
-      return "bg-green-100 text-green-800";
-    case "Degraded Performance":
-      return "bg-yellow-100 text-yellow-800";
-    case "Partial Outage":
-      return "bg-orange-100 text-orange-800";
-    case "Unknown":
-      return "bg-gray-100 text-gray-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
+import { getApplicationStatusColor } from "./utils";
 
 export default function ApplicationsPage() {
   const currentOrg = useAtomValue(currentOrgAtom);
@@ -162,7 +148,7 @@ export default function ApplicationsPage() {
               <TableCell className="font-medium">{app.name}</TableCell>
               <TableCell>
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getApplicationStatusColor(
                     app.status as ApplicationStatus
                   )}`}
                 >

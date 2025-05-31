@@ -138,7 +138,7 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
               ) / 100
             : 0,
         count: stageCounts.Reported,
-        fill: "#f87171", // Light red
+        fill: "var(--color-Reported)",
       },
       {
         stage: "Investigating",
@@ -149,7 +149,7 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
               ) / 100
             : 0,
         count: stageCounts.Investigating,
-        fill: "#fbbf24", // Light amber
+        fill: "var(--color-Investigating)",
       },
       {
         stage: "Identified",
@@ -160,7 +160,7 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
               ) / 100
             : 0,
         count: stageCounts.Identified,
-        fill: "#60a5fa", // Light blue
+        fill: "var(--color-Identified)",
       },
       {
         stage: "Fixed",
@@ -169,34 +169,33 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
             ? Math.round((stageDurations.Fixed / stageCounts.Fixed) * 100) / 100
             : 0,
         count: stageCounts.Fixed,
-        fill: "#34d399", // Light green
+        fill: "var(--color-Fixed)",
       },
     ];
 
     const result = stageData.filter((stage) => stage.duration > 0);
     return result;
   }, [logsQueries.data, incidentsWithLogs]);
-
   const chartConfig = {
     duration: {
       label: "Duration (hours)",
-      color: "hsl(var(--chart-1))",
+      color: "#a88fd9",
     },
     Reported: {
       label: "Reported",
-      color: "#f87171",
+      color: "#d98787",
     },
     Investigating: {
       label: "Investigating",
-      color: "#fbbf24",
+      color: "#d9b587",
     },
     Identified: {
       label: "Identified",
-      color: "#60a5fa",
+      color: "#d9c88f",
     },
     Fixed: {
       label: "Fixed",
-      color: "#34d399",
+      color: "#7ed987",
     },
   } satisfies ChartConfig;
 
@@ -266,10 +265,10 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
                       const data = payload[0].payload;
                       return (
                         <div className="bg-background border border-border rounded-lg shadow-lg p-3 space-y-1">
-                          <div className="font-medium text-sm">
+                          <div className="font-medium text-xs">
                             {data.stage} Stage
                           </div>
-                          <div className="text-sm">
+                          <div className="text-xs">
                             {data.duration} hours average
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -282,7 +281,7 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
                     return null;
                   }}
                 />
-                <Bar dataKey="duration" />
+                <Bar dataKey="duration" radius={4} />
               </BarChart>
             </ChartContainer>
           </div>

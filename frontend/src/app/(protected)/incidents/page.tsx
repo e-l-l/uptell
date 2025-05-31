@@ -39,21 +39,9 @@ import { IncidentModal } from "./incident-modal";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/spinner";
+import { getIncidentStatusColor } from "./utils";
 
-const getStatusColor = (status: IncidentStatus) => {
-  switch (status) {
-    case "Reported":
-      return "bg-red-100 text-red-800";
-    case "Investigating":
-      return "bg-yellow-100 text-yellow-800";
-    case "Identified":
-      return "bg-orange-100 text-orange-800";
-    case "Fixed":
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
+
 
 export default function IncidentsPage() {
   const [incidentToDelete, setIncidentToDelete] = useState<string | null>(null);
@@ -198,7 +186,7 @@ export default function IncidentsPage() {
                 <TableCell className="font-medium">{incident.title}</TableCell>
                 <TableCell>
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getIncidentStatusColor(
                       incident.status as IncidentStatus
                     )}`}
                   >

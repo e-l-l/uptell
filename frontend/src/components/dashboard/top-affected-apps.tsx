@@ -3,7 +3,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { AlertTriangle } from "lucide-react";
 import { Incident } from "@/app/(protected)/incidents/types";
-import { Application } from "@/app/(protected)/applications/types";
+import {
+  Application,
+  ApplicationStatus,
+} from "@/app/(protected)/applications/types";
+import { getApplicationStatusColor } from "@/app/(protected)/applications/utils";
 
 interface TopAffectedAppsProps {
   incidents: Incident[];
@@ -20,7 +24,10 @@ export function TopAffectedApps({
   const appIncidentCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     incidents.forEach((incident) => {
-      counts[incident.app_id] = (counts[incident.app_id] || 0) + 1;
+      // Only count incidents that are not Fixed
+      if (incident.status !== "Fixed") {
+        counts[incident.app_id] = (counts[incident.app_id] || 0) + 1;
+      }
     });
 
     // Convert to array and sort by count
@@ -36,21 +43,6 @@ export function TopAffectedApps({
       .sort((a, b) => b.count - a.count)
       .slice(0, 5); // Top 5 apps
   }, [incidents, applications]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Operational":
-        return "bg-green-100 text-green-800";
-      case "Degraded Performance":
-        return "bg-yellow-100 text-yellow-800";
-      case "Partial Outage":
-        return "bg-orange-100 text-orange-800";
-      case "Major Outage":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   return (
     <Card className="flex flex-col justify-between">
@@ -68,7 +60,7 @@ export function TopAffectedApps({
           </div>
         ) : appIncidentCounts.length === 0 ? (
           <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">No incidents found</p>
+            <p className="text-sm text-muted-foreground">No Active incidents found</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -98,7 +90,9 @@ export function TopAffectedApps({
                       {app.count}
                     </Badge>
                     <Badge
-                      className={`text-xs ${getStatusColor(app.appStatus)}`}
+                      className={`text-xs ${getApplicationStatusColor(
+                        app.appStatus as ApplicationStatus
+                      )}`}
                     >
                       {app.appStatus}
                     </Badge>

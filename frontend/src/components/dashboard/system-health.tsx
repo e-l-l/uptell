@@ -38,10 +38,10 @@ const SystemHealthCard = ({
             variant="default"
             className={
               systemHealthStatus === "Healthy"
-                ? "bg-green-100 text-green-800 hover:bg-green-100"
+                ? "bg-good-bg-dark text-good-fg-dark hover:bg-good-bg-dark"
                 : systemHealthStatus === "Warning"
-                ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                : "bg-red-100 text-red-800 hover:bg-red-100"
+                ? "bg-worse-bg-dark text-worse-fg-dark hover:bg-worse-bg-dark"
+                : "bg-worst-bg-dark text-worst-fg-dark hover:bg-worst-bg-dark"
             }
           >
             {systemHealthStatus}

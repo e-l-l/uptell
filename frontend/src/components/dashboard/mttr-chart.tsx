@@ -202,17 +202,8 @@ export function MttrChart({ incidents, isLoading }: MttrChartProps) {
               Average over last {mttrData.length} weeks
             </p>
 
-            <ChartContainer config={chartConfig} className="h-[200px]">
-              <AreaChart
-                accessibilityLayer
-                data={mttrData}
-                margin={{
-                  left: 12,
-                  right: 12,
-                  top: 12,
-                  bottom: 12,
-                }}
-              >
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <AreaChart accessibilityLayer data={mttrData}>
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -224,9 +215,8 @@ export function MttrChart({ incidents, isLoading }: MttrChartProps) {
                 <YAxis
                   tickLine={false}
                   axisLine={false}
-                  tickMargin={8}
+                  tickMargin={4}
                   fontSize={12}
-                  label={{ value: "Hours", angle: -90, position: "insideLeft" }}
                 />
                 <ChartTooltip
                   cursor={false}

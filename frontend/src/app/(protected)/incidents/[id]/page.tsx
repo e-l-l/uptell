@@ -47,13 +47,7 @@ import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { IncidentStatus } from "../types";
 import { Input } from "@/components/ui/input";
-
-const statusColors = {
-  Reported: "bg-red-500/10 text-red-700 border-red-200",
-  Investigating: "bg-yellow-500/10 text-yellow-700 border-yellow-200",
-  Identified: "bg-blue-500/10 text-blue-700 border-blue-200",
-  Fixed: "bg-green-500/10 text-green-700 border-green-200",
-} as const;
+import { getIncidentStatusColor } from "../utils";
 
 const statusIcons = {
   Reported: AlertCircleIcon,
@@ -272,9 +266,9 @@ export default function IncidentDetailsPage() {
           )}
         </div>
         <Badge
-          className={`px-3 py-1 ${
-            statusColors[incident.status as keyof typeof statusColors]
-          }`}
+          className={`px-3 py-1 ${getIncidentStatusColor(
+            incident.status as IncidentStatus
+          )}`}
         >
           <StatusIcon className="w-4 h-4 mr-2" />
           {incident.status}
@@ -451,11 +445,9 @@ export default function IncidentDetailsPage() {
                             {/* Timeline item */}
                             <div className="flex items-start space-x-3">
                               <div
-                                className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                                  statusColors[
-                                    log.status as keyof typeof statusColors
-                                  ]
-                                } border-2`}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center ${getIncidentStatusColor(
+                                  log.status as IncidentStatus
+                                )} border-2`}
                               >
                                 <LogStatusIcon className="w-3 h-3" />
                               </div>
@@ -464,11 +456,9 @@ export default function IncidentDetailsPage() {
                                 <div className="flex items-center justify-between">
                                   <Badge
                                     variant="outline"
-                                    className={`text-xs ${
-                                      statusColors[
-                                        log.status as keyof typeof statusColors
-                                      ]
-                                    }`}
+                                    className={`text-xs ${getIncidentStatusColor(
+                                      log.status as IncidentStatus
+                                    )}`}
                                   >
                                     {log.status}
                                   </Badge>
