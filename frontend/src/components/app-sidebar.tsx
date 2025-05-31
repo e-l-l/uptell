@@ -15,17 +15,23 @@ import {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="icon" className="border-none" {...props}>
-      <SidebarHeader className="flex flex-row items-center">
-        <SidebarTrigger />
-        <div className="px-2 py-2 group-data-[collapsible=icon]:hidden">
-          <h2 className="text-lg font-semibold">uptell</h2>
+    <Sidebar
+      collapsible="icon"
+      className="border-border bg-background-secondary backdrop-blur-sm"
+      {...props}
+    >
+      <SidebarHeader className="flex flex-row items-center px-2 py-6 border-b border-border">
+        <SidebarTrigger className="transition-colors hover:bg-background-muted" />
+        <div className="group-data-[collapsible=icon]:hidden">
+          <h2 className="text-3xl font-bold text-sidebar-foreground tracking-tight">
+            uptell
+          </h2>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="px-2 py-4 border-t border-border">
         <NavUser />
       </SidebarFooter>
       <SidebarRail />

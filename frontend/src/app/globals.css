@@ -5,6 +5,7 @@
 @theme {
   /* Main colors */
   --color-background: #080a0a;
+  --color-background-secondary: #141414FF;
   --color-background-muted: #1f1f1f;
   --color-foreground: #f7f8f8;
   --color-primary: #f7f8f8;
@@ -80,6 +81,8 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-muted: 240 4.8% 95.9%;
+    --sidebar-muted-foreground: 240 3.8% 46.1%;
   }
 
   .dark {
@@ -111,5 +114,7 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-muted: 240 3.7% 15.9%;
+    --sidebar-muted-foreground: 240 5% 64.9%;
   }
 }

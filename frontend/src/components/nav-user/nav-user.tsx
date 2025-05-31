@@ -1,12 +1,10 @@
 "use client";
 
-import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
+import { LogOut, Building2, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -16,22 +14,47 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import { useAtomValue } from "jotai";
 import { userAtom, currentOrgAtom } from "@/lib/atoms/auth";
 import { apiClient } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "./user-avatar";
-import { OrganizationSwitcher } from "./organization-switcher";
+import { useUserOrganizations } from "@/lib/hooks/use-user-organizations";
+import { CreateOrganizationDialog } from "./create-organization-dialog";
+import { Check } from "lucide-react";
+
+interface Organization {
+  id: string;
+  name: string;
+}
+
+interface UserOrganization {
+  organization: Organization;
+  role: string;
+}
 
 export function NavUser() {
   const { isMobile } = useSidebar();
   const user = useAtomValue(userAtom);
   const currentOrg = useAtomValue(currentOrgAtom);
   const router = useRouter();
+  const { data: userOrganizations = [] } = useUserOrganizations(user?.id || "");
 
   const handleSignOut = () => {
     apiClient.signOut();
     router.push("/login");
+  };
+
+  const handleSwitchOrganization = (orgId: string) => {
+    const selectedOrg = userOrganizations.find(
+      (userOrg: UserOrganization) => userOrg.organization.id === orgId
+    );
+    if (selectedOrg) {
+      apiClient.setCurrentOrganization(selectedOrg.organization);
+      // Optionally refresh the page to ensure all components pick up the new organization
+      window.location.reload();
+    }
   };
 
   if (!user) {
@@ -39,46 +62,76 @@ export function NavUser() {
   }
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className="space-y-3">
+      {/* User Info */}
+      <SidebarMenuItem>
+        <div className="flex items-center gap-3 px-2">
+          <UserAvatar user={user} />
+        </div>
+      </SidebarMenuItem>
+
+      {/* Organization Switcher */}
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <UserAvatar user={user} />
-              <ChevronsUpDown className="ml-auto size-4" />
+            <SidebarMenuButton className="w-full justify-between h-11 rounded-lg transition-all duration-200 hover:bg-sidebar-accent/70 px-3 border border-border hover:border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="h-6 w-6 rounded bg-sidebar-primary/10 flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-sidebar-primary" />
+                </div>
+                <span className="truncate font-medium text-sm text-sidebar-foreground w-36">
+                  {currentOrg?.name || "No Organization"}
+                </span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-sidebar-foreground/60 transition-transform duration-200" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg border-border bg-background-secondary"
             side={isMobile ? "bottom" : "right"}
-            align="end"
+            align="start"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <UserAvatar user={user} />
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
+            {userOrganizations.map((userOrg: UserOrganization) => (
+              <DropdownMenuItem
+                key={userOrg.organization.id}
+                onClick={() =>
+                  handleSwitchOrganization(userOrg.organization.id)
+                }
+                className="rounded-md focus:bg-sidebar-accent/50 cursor-pointer"
+              >
+                <div className="flex items-center w-full">
+                  <div className="flex-1">
+                    <div className="font-medium text-sidebar-foreground">
+                      {userOrg.organization.name}
+                    </div>
+                    <div className="text-xs text-sidebar-foreground/60">
+                      {userOrg.role}
+                    </div>
+                  </div>
+                  {currentOrg?.id === userOrg.organization.id && (
+                    <Check className="h-4 w-4 ml-2 text-sidebar-primary" />
+                  )}
+                </div>
               </DropdownMenuItem>
-              <OrganizationSwitcher
-                userId={user.id}
-                currentOrgId={currentOrg?.id}
-              />
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut />
-              Log out
-            </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator className="bg-border" />
+            <CreateOrganizationDialog userId={user.id} />
           </DropdownMenuContent>
         </DropdownMenu>
+      </SidebarMenuItem>
+
+      {/* Logout Button */}
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          onClick={handleSignOut}
+          className="w-full justify-start h-11 rounded-lg transition-all duration-200 text-destructive hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-border px-3 cursor-pointer"
+        >
+          <div className="h-6 rounded bg-destructive/10 flex items-center justify-center">
+            <LogOut className="h-4 w-4" />
+          </div>
+          <span className="font-medium text-sm">Log out</span>
+        </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
   );

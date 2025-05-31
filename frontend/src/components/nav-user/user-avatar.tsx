@@ -26,7 +26,7 @@ export function UserAvatar({
   return (
     <>
       <Avatar className={`${sizeClasses[size]} rounded-lg`}>
-        <AvatarFallback className="rounded-lg">
+        <AvatarFallback className="rounded-lg bg-background-muted p-2">
           {user?.firstName.charAt(0)}
           {user?.lastName.charAt(0)}
         </AvatarFallback>
