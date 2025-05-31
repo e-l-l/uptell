@@ -47,7 +47,6 @@ import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { IncidentStatus } from "../types";
 import { Input } from "@/components/ui/input";
-import { connectWebSocket } from "@/lib/socket";
 
 const statusColors = {
   Reported: "bg-red-500/10 text-red-700 border-red-200",
@@ -124,16 +123,6 @@ export default function IncidentDetailsPage() {
       });
     }
   }, [incident]);
-
-  // Setup WebSocket connection
-  React.useEffect(() => {
-    if (!currentOrg?.id) return;
-
-    connectWebSocket(currentOrg.id, (message) => {
-      console.log("Received WebSocket message:", message);
-      // You can trigger toast or state updates here
-    });
-  }, [currentOrg?.id]);
 
   // Find the application name based on app_id
   const applicationName =

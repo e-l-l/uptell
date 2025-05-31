@@ -39,7 +39,6 @@ import { IncidentModal } from "./incident-modal";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/spinner";
-import { connectWebSocket } from "@/lib/socket";
 
 const getStatusColor = (status: IncidentStatus) => {
   switch (status) {
@@ -70,15 +69,6 @@ export default function IncidentsPage() {
   const createIncident = useCreateIncident();
   const createIncidentLog = useCreateIncidentLog();
   const deleteIncident = useDeleteIncident();
-
-  useEffect(() => {
-    if (!currentOrg?.id) return;
-
-    connectWebSocket(currentOrg.id, (message) => {
-      console.log("Received WebSocket message:", message);
-      // You can trigger toast or state updates here
-    });
-  }, [currentOrg?.id]);
 
   const router = useRouter();
   const onRowClick = (incident: Incident) => {
