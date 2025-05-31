@@ -65,7 +65,7 @@ export function NavUser() {
     <SidebarMenu className="space-y-3">
       {/* User Info */}
       <SidebarMenuItem>
-        <div className="flex items-center gap-3 px-2">
+        <div className="flex items-center gap-3">
           <UserAvatar user={user} />
         </div>
       </SidebarMenuItem>
@@ -76,7 +76,7 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton className="w-full justify-between h-11 rounded-lg transition-all duration-200 hover:bg-sidebar-accent/70 px-3 border border-border hover:border-border/50">
               <div className="flex items-center gap-3">
-                <div className="h-6 w-6 rounded bg-sidebar-primary/10 flex items-center justify-center">
+                <div className="h-6 rounded bg-sidebar-primary/10 flex items-center justify-center">
                   <Building2 className="h-4 w-4 text-sidebar-primary" />
                 </div>
                 <span className="truncate font-medium text-sm text-sidebar-foreground w-36">
