@@ -14,7 +14,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { useAtomValue } from "jotai";
 import { userAtom, currentOrgAtom } from "@/lib/atoms/auth";
 import { apiClient } from "@/lib/api-client";
@@ -90,7 +89,7 @@ export function NavUser() {
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg border-border bg-background-secondary"
             side={isMobile ? "bottom" : "right"}
             align="start"
-            sideOffset={4}
+            sideOffset={16}
           >
             {userOrganizations.map((userOrg: UserOrganization) => (
               <DropdownMenuItem

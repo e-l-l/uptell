@@ -57,8 +57,8 @@ export function NavMain() {
                   group relative h-11 rounded-lg transition-all duration-200 ease-in-out
                   ${
                     isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                      : "hover:bg-sidebar-accent/70 text-sidebar-foreground/80 hover:text-sidebar-foreground"
+                      ? "bg-background-active shadow-sm"
+                      : "hover:bg-background-muted"
                   }
                 `}
               >
