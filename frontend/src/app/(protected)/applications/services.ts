@@ -19,7 +19,10 @@ export const useApplications = (orgId: string | undefined) => {
     queryKey: ["applications", orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      return apiClient.get<Application[]>("/applications", { org_id: orgId });
+      const applications = await apiClient.get<Application[]>("/applications", {
+        org_id: orgId,
+      });
+      return applications.sort((a, b) => a.name.localeCompare(b.name));
     },
   });
 };

@@ -41,7 +41,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               `📱 New application "${message.data.name}" was created by another user`
             );
             queryClient.invalidateQueries({
-              queryKey: ["applications", currentOrg.id],
+              queryKey: ["applications"],
             });
             break;
 
@@ -50,28 +50,28 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               `📱 Application "${message.data.name}" was updated by another user`
             );
             queryClient.invalidateQueries({
-              queryKey: ["applications", currentOrg.id],
+              queryKey: ["applications"],
             });
             break;
 
           case "deleted_app":
             toast.success(`📱 An application was deleted by another user`);
             queryClient.invalidateQueries({
-              queryKey: ["applications", currentOrg.id],
+              queryKey: ["applications"],
             });
             break;
 
           case "new_incident":
             toast.error(`🚨 New incident reported: "${message.data.title}"`);
             queryClient.invalidateQueries({
-              queryKey: ["incidents", currentOrg.id],
+              queryKey: ["incidents"],
             });
             break;
 
           case "updated_incident":
             toast.info(`📝 Incident "${message.data.title}" was updated`);
             queryClient.invalidateQueries({
-              queryKey: ["incidents", currentOrg.id],
+              queryKey: ["incidents"],
             });
             // Also invalidate specific incident if we have the ID
             if (message.entity_id) {
@@ -84,7 +84,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           case "deleted_incident":
             toast.success(`✅ An incident was resolved and deleted`);
             queryClient.invalidateQueries({
-              queryKey: ["incidents", currentOrg.id],
+              queryKey: ["incidents"],
             });
             break;
 
@@ -100,10 +100,30 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
               });
             }
             queryClient.invalidateQueries({
-              queryKey: ["incidents", currentOrg.id],
+              queryKey: ["incidents"],
             });
             break;
 
+          case "new_maintenance":
+            toast.info(`📝 New maintenance was created`);
+            queryClient.invalidateQueries({
+              queryKey: ["maintenance"],
+            });
+            break;
+
+          case "updated_maintenance":
+            toast.info(`📝 Maintenance was updated`);
+            queryClient.invalidateQueries({
+              queryKey: ["maintenance"],
+            });
+            break;
+
+          case "deleted_maintenance":
+            toast.success(`✅ Maintenance was deleted`);
+            queryClient.invalidateQueries({
+              queryKey: ["maintenance"],
+            });
+            break;
           default:
             console.log("Unknown message type:", message.type);
         }
