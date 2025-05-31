@@ -14,7 +14,6 @@ async def create_maintenance(payload: MaintenanceCreate, supabase=Depends(get_su
     # Convert the payload to a JSON-serializable format
     serialized_payload = jsonable_encoder(payload)
     
-    # Insert the serialized payload into the Supabase table
     res = supabase.table("maintenance").insert(serialized_payload).execute()
     
     if not res.data:
@@ -45,7 +44,9 @@ def list_all_maintenance(org_id: str = Query(...), supabase=Depends(get_supabase
     res = supabase.table("maintenance").select("*").eq("org_id", org_id).execute()
     if not res.data:
         return []
-    return res.data
+    
+    # Create Maintenance model instances to ensure proper datetime serialization
+    return [Maintenance(**item) for item in res.data]
 
 @router.get("/app/{app_id}", response_model=List[Maintenance])
 def list_app_maintenance(app_id: str = Path(...), supabase=Depends(get_supabase)):
@@ -55,7 +56,9 @@ def list_app_maintenance(app_id: str = Path(...), supabase=Depends(get_supabase)
     res = supabase.table("maintenance").select("*").eq("app_id", app_id).execute()
     if not res.data:
         return []
-    return res.data
+    
+    # Create Maintenance model instances to ensure proper datetime serialization
+    return [Maintenance(**item) for item in res.data]
 
 @router.patch("/{id}", response_model=Maintenance)
 async def update_maintenance(id: str, payload: MaintenanceUpdate, supabase=Depends(get_supabase)):
@@ -63,7 +66,10 @@ async def update_maintenance(id: str, payload: MaintenanceUpdate, supabase=Depen
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
     
-    res = supabase.table("maintenance").update(update_data).eq("id", id).execute()
+    # Convert the update data to a JSON-serializable format
+    serialized_update_data = jsonable_encoder(update_data)
+    
+    res = supabase.table("maintenance").update(serialized_update_data).eq("id", id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Maintenance not found")
     user=supabase.auth.get_user().user

@@ -1,16 +1,20 @@
 "use client";
 
+import React from "react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useApplications } from "@/app/(protected)/applications/services";
 import { useIncidents } from "@/app/(protected)/incidents/services";
+import { useMaintenance } from "@/app/(protected)/maintenance/services";
+import { getMaintenanceStatus } from "@/app/(protected)/maintenance/utils";
 import { AppHistory } from "@/components/dashboard/app-history";
 import { useAtom } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import TotalAppsCard from "@/components/dashboard/total-apps";
 import UnfixedIncidentsCard from "@/components/dashboard/unfixed-incidents";
 import SystemHealthCard from "@/components/dashboard/system-health";
+import NextMaintenanceCard from "@/components/dashboard/next-maintenance";
 import { TopAffectedApps } from "@/components/dashboard/top-affected-apps";
 import { MttrChart } from "@/components/dashboard/mttr-chart";
 import { StageDurations } from "@/components/dashboard/stage-durations";
@@ -25,6 +29,8 @@ export default function DashboardPage() {
   const { data: incidents = [], isLoading: incidentsLoading } = useIncidents(
     currentOrg?.id || ""
   );
+  const { data: maintenance = [], isLoading: maintenanceLoading } =
+    useMaintenance(currentOrg?.id || "");
 
   // Calculate metrics from real data
   const totalApplications = applications.length;
@@ -39,6 +45,23 @@ export default function DashboardPage() {
       app.status === "Degraded Performance" ||
       app.status === "Partial Outage"
   ).length;
+
+  // Find next scheduled maintenance
+  const nextMaintenance = React.useMemo(() => {
+    const now = new Date();
+    const upcomingMaintenance = maintenance.filter((m) => {
+      const status = getMaintenanceStatus(m);
+      return status === "Scheduled" || status === "In Progress";
+    });
+
+    if (upcomingMaintenance.length === 0) return null;
+
+    // Sort by start time and return the earliest one
+    return upcomingMaintenance.sort(
+      (a, b) =>
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+    )[0];
+  }, [maintenance]);
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -55,7 +78,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-semibold">Overview</h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Applications Card */}
           <TotalAppsCard
             applicationsLoading={applicationsLoading}
@@ -73,6 +96,12 @@ export default function DashboardPage() {
             applicationsLoading={applicationsLoading}
             operationalApps={operationalApps}
             totalApplications={totalApplications}
+          />
+
+          {/* Next Maintenance Card */}
+          <NextMaintenanceCard
+            maintenanceLoading={maintenanceLoading}
+            nextMaintenance={nextMaintenance}
           />
         </div>
       </section>
