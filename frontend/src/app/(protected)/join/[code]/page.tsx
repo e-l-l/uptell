@@ -14,10 +14,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiClient } from "@/lib/api-client";
-import { userAtom, currentOrgAtom } from "@/lib/atoms/auth";
+import { userAtom } from "@/lib/atoms/auth";
 import { toast } from "sonner";
 import {
   Building2,
@@ -28,29 +27,11 @@ import {
   Clock,
 } from "lucide-react";
 
-interface InviteDetails {
-  id: string;
-  code: string;
-  email: string;
-  role: "owner" | "member";
-  expires_at: string;
-  organization: {
-    id: string;
-    name: string;
-  };
-  invited_by: {
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
-}
-
 export default function JoinWithCodePage() {
   const router = useRouter();
   const params = useParams();
   const code = params.code as string;
   const [user] = useAtom(userAtom);
-  const [, setCurrentOrg] = useAtom(currentOrgAtom);
   const [isJoining, setIsJoining] = useState(false);
   const queryClient = useQueryClient();
 
@@ -72,10 +53,6 @@ export default function JoinWithCodePage() {
     try {
       setIsJoining(true);
       const result = await apiClient.joinOrganization(code);
-
-      // Update the current organization
-      setCurrentOrg(result.organization.id);
-
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
       queryClient.invalidateQueries({ queryKey: ["organizationMembers"] });

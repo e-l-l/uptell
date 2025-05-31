@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useCreateOrganization } from "@/lib/hooks/use-user-organizations";
+import { useAtom } from "jotai";
+import { currentOrgAtom } from "@/lib/atoms/auth";
 
 interface CreateOrganizationDialogProps {
   userId: string;
@@ -23,22 +25,28 @@ export function CreateOrganizationDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [orgName, setOrgName] = useState("");
   const createOrganization = useCreateOrganization();
+  const [, setCurrentOrg] = useAtom(currentOrgAtom);
 
-  const handleCreateOrganization = async (e: React.FormEvent) => {
+  const handleCreateOrganization = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgName.trim()) return;
 
     try {
-      await createOrganization.mutateAsync({
-        name: orgName.trim(),
-        userId,
-      });
-      setOrgName("");
-      setIsOpen(false);
-      // Refresh the page to ensure all components pick up the new organization
-      window.location.reload();
+      createOrganization.mutate(
+        {
+          name: orgName.trim(),
+          userId,
+        },
+        {
+          onSuccess: (data) => {
+            setOrgName("");
+            setCurrentOrg(data.organization);
+            setIsOpen(false);
+          },
+        }
+      );
     } catch (error) {
-      // Error is handled by the mutation's onError
+      console.error(error);
     }
   };
 

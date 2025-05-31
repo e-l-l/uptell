@@ -57,9 +57,6 @@ const getStatusColor = (status: IncidentStatus) => {
 
 export default function IncidentsPage() {
   const [incidentToDelete, setIncidentToDelete] = useState<string | null>(null);
-  const [selectedIncident, setSelectedIncident] = useState<
-    Incident | undefined
-  >();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const currentOrg = useAtomValue(currentOrgAtom);

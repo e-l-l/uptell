@@ -2,14 +2,9 @@
 
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
-import { BarChart3, Timer } from "lucide-react";
+import { Timer } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "../ui/chart";
+import { ChartConfig, ChartContainer, ChartTooltip } from "../ui/chart";
 import { Incident } from "@/app/(protected)/incidents/types";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
@@ -28,10 +23,11 @@ interface IncidentLog {
 }
 
 export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
-  // Fetch logs for all incidents that have progressed through stages
-  const incidentsWithLogs = incidents.filter(
-    (incident) => incident.status !== "Reported" || incidents.length > 0
-  );
+  // Debug logging
+  console.log("StageDurations - incidents:", incidents);
+
+  // Fetch logs for all incidents (we'll filter based on actual log data)
+  const incidentsWithLogs = incidents;
 
   const logsQueries = useQuery({
     queryKey: ["stage-durations-logs", incidentsWithLogs.map((i) => i.id)],
@@ -61,6 +57,12 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
 
   // Calculate average stage durations from real logs
   const stageDurationData = React.useMemo(() => {
+    console.log("StageDurations - logsQueries.data:", logsQueries.data);
+    console.log(
+      "StageDurations - incidentsWithLogs.length:",
+      incidentsWithLogs.length
+    );
+
     if (!logsQueries.data || incidentsWithLogs.length === 0) return [];
 
     const stageCounts = {
@@ -78,6 +80,10 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
     };
 
     logsQueries.data.forEach(({ incident, logs }) => {
+      console.log(
+        `Processing incident ${incident.id} with ${logs.length} logs:`,
+        logs
+      );
       if (logs.length === 0) return;
 
       // Sort logs by creation time
@@ -85,6 +91,7 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
         (a, b) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
+      console.log(`Sorted logs for incident ${incident.id}:`, sortedLogs);
 
       // Calculate durations between stages
       for (let i = 0; i < sortedLogs.length; i++) {
@@ -121,7 +128,7 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
     });
 
     // Calculate averages and format for chart
-    return [
+    const stageData = [
       {
         stage: "Reported",
         duration:
@@ -164,28 +171,32 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
         count: stageCounts.Fixed,
         fill: "#34d399", // Light green
       },
-    ].filter((stage) => stage.duration > 0);
+    ];
+
+    const result = stageData.filter((stage) => stage.duration > 0);
+    return result;
   }, [logsQueries.data, incidentsWithLogs]);
 
   const chartConfig = {
     duration: {
       label: "Duration (hours)",
+      color: "hsl(var(--chart-1))",
     },
     Reported: {
       label: "Reported",
-      color: "hsl(var(--chart-1))",
+      color: "#f87171",
     },
     Investigating: {
       label: "Investigating",
-      color: "hsl(var(--chart-2))",
+      color: "#fbbf24",
     },
     Identified: {
       label: "Identified",
-      color: "hsl(var(--chart-3))",
+      color: "#60a5fa",
     },
     Fixed: {
       label: "Fixed",
-      color: "hsl(var(--chart-4))",
+      color: "#34d399",
     },
   } satisfies ChartConfig;
 
@@ -219,9 +230,17 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
             <p className="text-xs text-muted-foreground">Loading...</p>
           </div>
         ) : stageDurationData.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-8 space-y-2">
             <p className="text-sm text-muted-foreground">
-              No incident data found
+              No stage duration data available
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {incidents.length === 0
+                ? "No incidents found"
+                : `${incidents.length} incidents found, but no stage transitions detected`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Check console for debugging info
             </p>
           </div>
         ) : (
@@ -236,78 +255,36 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
               Total avg cycle time: {totalDuration}h
             </p>
 
-            <ChartContainer config={chartConfig} className="h-[200px]">
-              <BarChart
-                accessibilityLayer
-                data={stageDurationData}
-                layout="horizontal"
-                margin={{
-                  left: 80,
-                  right: 12,
-                  top: 12,
-                  bottom: 12,
-                }}
-              >
+            <ChartContainer config={chartConfig} className="h-[150px] w-full">
+              <BarChart data={stageDurationData} layout="vertical">
                 <CartesianGrid horizontal={false} />
-                <XAxis
-                  type="number"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                  label={{
-                    value: "Hours",
-                    position: "insideBottom",
-                    offset: -10,
+                <XAxis type="number" />
+                <YAxis dataKey="stage" type="category" width={80} />
+                <ChartTooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-background border border-border rounded-lg shadow-lg p-3 space-y-1">
+                          <div className="font-medium text-sm">
+                            {data.stage} Stage
+                          </div>
+                          <div className="text-sm">
+                            {data.duration} hours average
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Based on {data.count} incident
+                            {data.count !== 1 ? "s" : ""}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
                 />
-                <YAxis
-                  dataKey="stage"
-                  type="category"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                  width={70}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="line" />}
-                  formatter={(value, name, props) => [
-                    `${value} hours`,
-                    `Avg ${props.payload.stage} time`,
-                  ]}
-                  labelFormatter={(label) => `${label} Stage`}
-                />
-                <Bar
-                  dataKey="duration"
-                  layout="horizontal"
-                  radius={[0, 4, 4, 0]}
-                />
+                <Bar dataKey="duration" />
               </BarChart>
             </ChartContainer>
-
-            {/* Stage breakdown */}
-            <div className="space-y-2">
-              {stageDurationData.map((stage) => (
-                <div
-                  key={stage.stage}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm"
-                      style={{ backgroundColor: stage.fill }}
-                    />
-                    <span>{stage.stage}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>{stage.duration}h avg</span>
-                    <span>({stage.count} incidents)</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
       </CardContent>
