@@ -18,14 +18,14 @@ def list_organizations(supabase=Depends(get_supabase)):
     return res.data
 
 @router.get("/{org_id}", response_model=Organization)
-def get_organization(org_id: int, supabase=Depends(get_supabase)):
+def get_organization(org_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("orgs").select("*").eq("id", org_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Organization not found")
     return res.data[0]
 
 @router.patch("/{org_id}", response_model=Organization)
-def update_organization(org_id: int, payload: OrganizationUpdate, supabase=Depends(get_supabase)):
+def update_organization(org_id: str, payload: OrganizationUpdate, supabase=Depends(get_supabase)):
     update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -36,7 +36,7 @@ def update_organization(org_id: int, payload: OrganizationUpdate, supabase=Depen
     return res.data[0]
 
 @router.delete("/{org_id}")
-def delete_organization(org_id: int, supabase=Depends(get_supabase)):
+def delete_organization(org_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("orgs").delete().eq("id", org_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Organization not found")

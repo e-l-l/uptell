@@ -16,23 +16,23 @@ router = APIRouter(prefix="/user-organizations", tags=["User Organizations"])
 @router.post("", response_model=UserOrganization)
 def create_user_organization(payload: UserOrganizationCreate, supabase=Depends(get_supabase)):
     # Check if user already belongs to the organization
-    existing = supabase.table("user_organizations").select("*").eq("user_id", payload.user_id).eq("org_id", payload.org_id).execute()
+    existing = supabase.table("user_orgs").select("*").eq("user_id", payload.user_id).eq("org_id", payload.org_id).execute()
     if existing.data:
         raise HTTPException(status_code=400, detail="User already belongs to this organization")
     
-    res = supabase.table("user_organizations").insert(payload.model_dump()).execute()
+    res = supabase.table("user_orgs").insert(payload.model_dump()).execute()
     if not res.data:
         raise HTTPException(status_code=400, detail="Failed to create user organization")
     return res.data[0]
 
 @router.get("/user/{user_id}", response_model=List[UserOrganization])
 def list_user_organizations(user_id: str, supabase=Depends(get_supabase)):
-    res = supabase.table("user_organizations").select("*").eq("user_id", user_id).execute()
+    res = supabase.table("user_orgs").select("*").eq("user_id", user_id).execute()
     return res.data
 
 @router.get("/org/{org_id}", response_model=List[UserOrganization])
 def list_organization_users(org_id: str, supabase=Depends(get_supabase)):
-    res = supabase.table("user_organizations").select("*").eq("org_id", org_id).execute()
+    res = supabase.table("user_orgs").select("*").eq("org_id", org_id).execute()
     return res.data
 
 @router.patch("/{id}", response_model=UserOrganization)
@@ -41,14 +41,14 @@ def update_user_organization(id: str, payload: UserOrganizationUpdate, supabase=
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
     
-    res = supabase.table("user_organizations").update(update_data).eq("id", id).execute()
+    res = supabase.table("user_orgs").update(update_data).eq("id", id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="User organization not found")
     return res.data[0]
 
 @router.delete("/{id}")
 def delete_user_organization(id: str, supabase=Depends(get_supabase)):
-    res = supabase.table("user_organizations").delete().eq("id", id).execute()
+    res = supabase.table("user_orgs").delete().eq("id", id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="User organization not found")
     return {"message": "User organization deleted successfully"}
@@ -66,14 +66,14 @@ def create_organization_invite(payload: OrganizationInviteCreate, supabase=Depen
         "expires_at": expires_at.isoformat()
     }
     
-    res = supabase.table("organization_invites").insert(invite_data).execute()
+    res = supabase.table("org_invites").insert(invite_data).execute()
     if not res.data:
         raise HTTPException(status_code=400, detail="Failed to create organization invite")
     return res.data[0]
 
 @router.get("/invites/{code}", response_model=OrganizationInvite)
 def get_organization_invite(code: str, supabase=Depends(get_supabase)):
-    res = supabase.table("organization_invites").select("*").eq("code", code).execute()
+    res = supabase.table("org_invites").select("*").eq("code", code).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Invite not found")
     
@@ -86,7 +86,7 @@ def get_organization_invite(code: str, supabase=Depends(get_supabase)):
 @router.post("/join/{code}", response_model=UserOrganization)
 def join_organization(code: str, user_id: str, supabase=Depends(get_supabase)):
     # Get the invite
-    invite_res = supabase.table("organization_invites").select("*").eq("code", code).execute()
+    invite_res = supabase.table("org_invites").select("*").eq("code", code).execute()
     if not invite_res.data:
         raise HTTPException(status_code=404, detail="Invite not found")
     
@@ -101,11 +101,11 @@ def join_organization(code: str, user_id: str, supabase=Depends(get_supabase)):
         role=invite["role"]
     )
     
-    res = supabase.table("user_organizations").insert(user_org.model_dump()).execute()
+    res = supabase.table("user_orgs").insert(user_org.model_dump()).execute()
     if not res.data:
         raise HTTPException(status_code=400, detail="Failed to join organization")
     
     # Delete the used invite
-    supabase.table("organization_invites").delete().eq("code", code).execute()
+    supabase.table("org_invites").delete().eq("code", code).execute()
     
     return res.data[0] 

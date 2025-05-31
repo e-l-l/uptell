@@ -176,6 +176,19 @@ class ApiClient {
     return response.data;
   }
 
+  async addUserToOrganization(
+    userId: string,
+    orgId: string,
+    role: "owner" | "member"
+  ) {
+    const response = await this.client.post("/user-organizations", {
+      user_id: userId,
+      org_id: orgId,
+      role,
+    });
+    return response.data;
+  }
+
   // Generic request methods
   async get<T>(url: string, params?: any) {
     const response = await this.client.get<T>(url, { params });

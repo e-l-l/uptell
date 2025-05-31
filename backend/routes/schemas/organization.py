@@ -13,7 +13,6 @@ class OrganizationUpdate(OrganizationBase):
 
 class Organization(OrganizationBase):
     id: str
-    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -30,8 +29,6 @@ class UserOrganizationUpdate(BaseModel):
     role: Optional[Literal["owner", "member"]] = None
 
 class UserOrganization(UserOrganizationBase):
-    id: str
-    created_at: datetime
 
     class Config:
         from_attributes = True
