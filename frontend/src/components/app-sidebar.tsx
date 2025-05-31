@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { LayoutDashboard, Briefcase, AlertTriangle } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
