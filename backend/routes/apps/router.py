@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List
+
+from routes.apps import history
 from ..schemas import Application, ApplicationCreate, ApplicationUpdate
 from ..dependencies import get_supabase
 from websocket_manager import manager
     
 router = APIRouter(prefix="/applications", tags=["Applications"])
-
+router.include_router(history.router, prefix="/{app_id}")
 @router.post("", response_model=Application)
 async def create_application(payload: ApplicationCreate, supabase=Depends(get_supabase)):
     res = supabase.table("apps").insert(payload.model_dump()).execute()
@@ -13,6 +15,11 @@ async def create_application(payload: ApplicationCreate, supabase=Depends(get_su
         raise HTTPException(status_code=400, detail="Failed to create application")
     user=supabase.auth.get_user().user
     await manager.broadcast({"type": "new_app", "data": res.data[0], "user_id": user.id}, org_id=payload.org_id)
+    
+    supabase.table("app_status_history").insert({
+        "app_id": res.data[0]["id"],
+        "status": res.data[0]["status"],
+    }).execute()
     return res.data[0]
 
 @router.get("", response_model=List[Application])
@@ -43,6 +50,10 @@ async def update_application(app_id: str, payload: ApplicationUpdate, supabase=D
         raise HTTPException(status_code=404, detail="Application not found")
     user=supabase.auth.get_user().user
     await manager.broadcast({"type": "updated_app", "data": res.data[0], "user_id": user.id}, org_id=res.data[0]["org_id"])
+    supabase.table("app_status_history").insert({
+        "app_id": res.data[0]["id"],
+        "status": res.data[0]["status"],
+    }).execute()
     return res.data[0]
 
 @router.delete("/{app_id}")
