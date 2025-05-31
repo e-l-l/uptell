@@ -23,8 +23,6 @@ interface IncidentLog {
 }
 
 export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
-  // Debug logging
-  console.log("StageDurations - incidents:", incidents);
 
   // Fetch logs for all incidents (we'll filter based on actual log data)
   const incidentsWithLogs = incidents;
@@ -57,11 +55,6 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
 
   // Calculate average stage durations from real logs
   const stageDurationData = React.useMemo(() => {
-    console.log("StageDurations - logsQueries.data:", logsQueries.data);
-    console.log(
-      "StageDurations - incidentsWithLogs.length:",
-      incidentsWithLogs.length
-    );
 
     if (!logsQueries.data || incidentsWithLogs.length === 0) return [];
 
@@ -80,10 +73,6 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
     };
 
     logsQueries.data.forEach(({ incident, logs }) => {
-      console.log(
-        `Processing incident ${incident.id} with ${logs.length} logs:`,
-        logs
-      );
       if (logs.length === 0) return;
 
       // Sort logs by creation time
@@ -91,7 +80,6 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
         (a, b) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
-      console.log(`Sorted logs for incident ${incident.id}:`, sortedLogs);
 
       // Calculate durations between stages
       for (let i = 0; i < sortedLogs.length; i++) {
@@ -237,9 +225,6 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
               {incidents.length === 0
                 ? "No incidents found"
                 : `${incidents.length} incidents found, but no stage transitions detected`}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Check console for debugging info
             </p>
           </div>
         ) : (

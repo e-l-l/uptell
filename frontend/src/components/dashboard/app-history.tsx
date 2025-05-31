@@ -261,9 +261,9 @@ export function AppHistory({ app }: AppHistoryProps) {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
+              <PopoverContent className="w-auto p-0 border-border" align="end">
                 <div className="flex">
-                  <div className="p-3">
+                  <div className="p-3 bg-background">
                     <div className="text-sm font-medium mb-2">Start Date</div>
                     <Calendar
                       mode="single"
@@ -272,7 +272,7 @@ export function AppHistory({ app }: AppHistoryProps) {
                       initialFocus
                     />
                   </div>
-                  <div className="p-3">
+                  <div className="p-3 bg-background border-l border-border">
                     <div className="text-sm font-medium mb-2">End Date</div>
                     <Calendar
                       mode="single"

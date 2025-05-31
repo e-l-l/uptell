@@ -5,6 +5,7 @@ import {
   Briefcase,
   AlertTriangle,
   Building2,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -34,8 +35,13 @@ const items = [
     icon: AlertTriangle,
   },
   {
-    title: "Organizations",
-    url: "/organizations",
+    title: "Maintenance",
+    url: "/maintenance",
+    icon: Wrench,
+  },
+  {
+    title: "Organization",
+    url: "/organization",
     icon: Building2,
   },
 ];

@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
+import { GradButton } from "../ui/grad-button";
 
 interface OrganizationHeaderProps {
   orgName: string;
@@ -21,10 +21,10 @@ export function OrganizationHeader({
         </p>
       </div>
       {isOwner && (
-        <Button className="gap-2" onClick={onInviteClick}>
+        <GradButton className="gap-2" onClick={onInviteClick}>
           <UserPlus className="h-4 w-4" />
           Invite Member
-        </Button>
+        </GradButton>
       )}
     </div>
   );
