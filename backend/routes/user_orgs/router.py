@@ -30,9 +30,9 @@ def list_user_organizations(user_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("user_orgs").select("*").eq("user_id", user_id).execute()
     return res.data
 
-@router.get("/org/{org_id}", response_model=List[UserOrganization])
+@router.get("/orgs/{org_id}")
 def list_organization_users(org_id: str, supabase=Depends(get_supabase)):
-    res = supabase.table("user_orgs").select("*").eq("org_id", org_id).execute()
+    res = supabase.rpc("get_users_for_org", {"org_id": org_id}).execute()
     return res.data
 
 @router.patch("/{id}", response_model=UserOrganization)
@@ -58,7 +58,7 @@ def delete_user_organization(id: str, supabase=Depends(get_supabase)):
 def create_organization_invite(payload: OrganizationInviteCreate, supabase=Depends(get_supabase)):
     # Generate a unique invite code
     invite_code = str(uuid.uuid4())
-    expires_at = datetime.utcnow() + timedelta(days=7)  # Invite expires in 7 days
+    expires_at = payload.expires_at or datetime.utcnow() + timedelta(days=7)  # Invite expires in 7 days
     
     invite_data = {
         **payload.model_dump(),

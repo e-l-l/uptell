@@ -151,12 +151,14 @@ class ApiClient {
   async createOrganizationInvite(
     orgId: string,
     email: string,
-    role: "owner" | "member"
+    role: "owner" | "member",
+    expiresAt?: Date
   ) {
     const response = await this.client.post("/user-organizations/invites", {
       org_id: orgId,
       email,
       role,
+      expires_at: expiresAt?.toISOString(),
     });
     return response.data;
   }
@@ -186,6 +188,28 @@ class ApiClient {
       org_id: orgId,
       role,
     });
+    return response.data;
+  }
+
+  async listOrganizationMembers(orgId: string) {
+    const response = await this.client.get(`/user-organizations/orgs/${orgId}`);
+    return response.data;
+  }
+
+  async updateUserRole(userOrgId: string, role: "owner" | "member") {
+    const response = await this.client.patch(
+      `/user-organizations/${userOrgId}`,
+      {
+        role,
+      }
+    );
+    return response.data;
+  }
+
+  async removeUserFromOrganization(userOrgId: string) {
+    const response = await this.client.delete(
+      `/user-organizations/${userOrgId}`
+    );
     return response.data;
   }
 

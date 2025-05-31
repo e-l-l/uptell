@@ -37,15 +37,15 @@ class OrganizationInviteBase(BaseModel):
     org_id: str
     email: str
     role: Literal["owner", "member"]
-    code: str
+    expires_at: Optional[datetime] = None
 
 class OrganizationInviteCreate(OrganizationInviteBase):
     pass
 
 class OrganizationInvite(OrganizationInviteBase):
     id: str
+    code: str
     created_at: datetime
-    expires_at: datetime
 
     class Config:
         from_attributes = True 

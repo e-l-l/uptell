@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   Briefcase,
   AlertTriangle,
-  type LucideIcon,
+  Building2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,6 +33,12 @@ const items = [
     title: "Incidents",
     url: "/incidents",
     icon: AlertTriangle,
+    isActive: false,
+  },
+  {
+    title: "Organizations",
+    url: "/organizations",
+    icon: Building2,
     isActive: false,
   },
 ];
