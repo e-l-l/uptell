@@ -1,13 +1,7 @@
 "use client";
 
 import { Separator } from "@/components/ui/separator";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useApplications } from "@/app/(protected)/applications/services";
 import { useIncidents } from "@/app/(protected)/incidents/services";
@@ -17,7 +11,10 @@ import { currentOrgAtom } from "@/lib/atoms/auth";
 import TotalAppsCard from "@/components/dashboard/total-apps";
 import UnfixedIncidentsCard from "@/components/dashboard/unfixed-incidents";
 import SystemHealthCard from "@/components/dashboard/system-health";
-import { AlertTriangle, Computer } from "lucide-react";
+import { TopAffectedApps } from "@/components/dashboard/top-affected-apps";
+import { MttrChart } from "@/components/dashboard/mttr-chart";
+import { StageDurations } from "@/components/dashboard/stage-durations";
+import { Computer } from "lucide-react";
 
 export default function DashboardPage() {
   const [currentOrg] = useAtom(currentOrgAtom);
@@ -112,67 +109,28 @@ export default function DashboardPage() {
 
       <Separator />
 
-      {/* Incidents Section */}
+      {/* Incidents Analytics Section */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Recent Incidents</h2>
+          <h2 className="text-xl font-semibold">Incident Analytics</h2>
           <Badge variant="outline">{incidents.length} total</Badge>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Incident Overview</CardTitle>
-            <CardDescription>
-              Recent incidents and their current status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {incidents.length > 0 ? (
-              <div className="space-y-4">
-                {incidents.slice(0, 5).map((incident) => (
-                  <div
-                    key={incident.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-medium">{incident.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {incident.description}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        incident.status === "Fixed"
-                          ? "default"
-                          : incident.status === "Investigating"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {incident.status}
-                    </Badge>
-                  </div>
-                ))}
-                {incidents.length > 5 && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    and {incidents.length - 5} more incidents...
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-32">
-                <div className="text-center space-y-2">
-                  <AlertTriangle className="h-8 w-8 mx-auto text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {incidentsLoading
-                      ? "Loading incidents..."
-                      : "No incidents reported. Your systems are running smoothly!"}
-                  </p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Incident Analytics Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Top Affected Apps */}
+          <TopAffectedApps
+            incidents={incidents}
+            applications={applications}
+            isLoading={incidentsLoading || applicationsLoading}
+          />
+
+          {/* MTTR Chart */}
+          <MttrChart incidents={incidents} isLoading={incidentsLoading} />
+
+          {/* Stage Durations */}
+          <StageDurations incidents={incidents} isLoading={incidentsLoading} />
+        </div>
       </section>
     </div>
   );
