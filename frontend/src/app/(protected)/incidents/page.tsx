@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2 } from "lucide-react";
 import { Incident, IncidentStatus } from "./types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import {
   useCreateIncident,
@@ -39,17 +39,18 @@ import { IncidentModal } from "./incident-modal";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/spinner";
+import { connectWebSocket } from "@/lib/socket";
 
 const getStatusColor = (status: IncidentStatus) => {
   switch (status) {
     case "Reported":
-      return "bg-green-100 text-green-800";
+      return "bg-red-100 text-red-800";
     case "Investigating":
       return "bg-yellow-100 text-yellow-800";
     case "Identified":
       return "bg-orange-100 text-orange-800";
     case "Fixed":
-      return "bg-gray-100 text-gray-800";
+      return "bg-green-100 text-green-800";
     default:
       return "bg-gray-100 text-gray-800";
   }
@@ -69,6 +70,15 @@ export default function IncidentsPage() {
   const createIncident = useCreateIncident();
   const createIncidentLog = useCreateIncidentLog();
   const deleteIncident = useDeleteIncident();
+
+  useEffect(() => {
+    if (!currentOrg?.id) return;
+
+    connectWebSocket(currentOrg.id, (message) => {
+      console.log("Received WebSocket message:", message);
+      // You can trigger toast or state updates here
+    });
+  }, [currentOrg?.id]);
 
   const router = useRouter();
   const onRowClick = (incident: Incident) => {

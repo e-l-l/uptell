@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { useAtomValue } from "jotai";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Application, ApplicationStatus } from "./types";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { ApplicationModal } from "./application-modal";
@@ -35,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { LoadingSpinner } from "@/components/spinner";
+import { connectWebSocket } from "@/lib/socket";
 
 const getStatusColor = (status: ApplicationStatus) => {
   switch (status) {
@@ -62,6 +63,15 @@ export default function ApplicationsPage() {
   const createApplication = useCreateApplication();
   const updateApplication = useUpdateApplication();
   const deleteApplication = useDeleteApplication();
+
+  useEffect(() => {
+    if (!currentOrg?.id) return;
+
+    connectWebSocket(currentOrg.id, (message) => {
+      console.log("Received WebSocket message:", message);
+      // You can trigger toast or state updates here
+    });
+  }, [currentOrg?.id]);
 
   const handleAddEdit = (data: { name: string; status: ApplicationStatus }) => {
     if (selectedApp) {

@@ -2,16 +2,27 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from typing import List
 from ..schemas import Log, LogCreate, LogUpdate
 from ..dependencies import get_supabase
-
+from websocket_manager import manager
 router = APIRouter(prefix="/logs", tags=["Incident Logs"])
 
 @router.post("", response_model=Log)
-def create_log(incident_id: str, payload: LogCreate, supabase=Depends(get_supabase)):
+async def create_log(incident_id: str, payload: LogCreate, supabase=Depends(get_supabase)):
     data = payload.model_dump()
     data["incident_id"] = incident_id  # Set incident_id from path parameter
     res = supabase.table("incident_logs").insert(data).execute()
     if not res.data:
-        raise HTTPException(status_code=400, detail="Failed to create log")
+        raise HTTPException(status_code=400, detail="Failed to create log") 
+    
+    # Get the incident to find the org_id
+    incident_res = supabase.table("incidents").select("org_id").eq("id", incident_id).execute()
+    if not incident_res.data:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    
+    user = supabase.auth.get_user().user
+    await manager.broadcast(
+        {"type": "new_log", "data": res.data[0], "user_id": user.id}, 
+        org_id=incident_res.data[0]["org_id"]
+    )
     return res.data[0]
 
 @router.get("", response_model=List[Log])

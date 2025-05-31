@@ -1,7 +1,8 @@
 from typing import Union
 import logging
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
+from websocket_manager import manager
 from routes.auth.router import router as auth_router
 from routes.orgs.router import router as org_router
 from routes.apps.router import router as app_router
@@ -75,3 +76,17 @@ app.include_router(org_router)
 app.include_router(app_router)
 app.include_router(incident_router)
 
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    # Get org_id from query params
+    query_params = dict(websocket._query_params)
+    org_id = query_params.get("org_id")
+
+    await manager.connect(websocket, org_id)
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
