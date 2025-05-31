@@ -45,6 +45,8 @@ class OrganizationInviteCreate(OrganizationInviteBase):
 class OrganizationInvite(OrganizationInviteBase):
     id: str
     code: str
+    organization: Optional[Organization] = None
+    invited_by: str
     created_at: datetime
 
     class Config:

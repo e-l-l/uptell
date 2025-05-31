@@ -148,7 +148,7 @@ export default function OrganizationPage() {
     memberName: string
   ) => {
     try {
-      await apiClient.removeUserFromOrganization(membershipId);
+      await apiClient.removeUserFromOrganization(membershipId, currentOrg!.id);
       toast.success(`${memberName} removed from organization`);
       // Invalidate and refetch the query
       queryClient.invalidateQueries({
@@ -464,7 +464,7 @@ export default function OrganizationPage() {
                                     <AlertDialogAction
                                       onClick={() =>
                                         handleRemoveMember(
-                                          member.id,
+                                          member.user_id,
                                           `${member.first_name} ${member.last_name}`
                                         )
                                       }

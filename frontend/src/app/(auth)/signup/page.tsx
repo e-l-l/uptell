@@ -103,7 +103,6 @@ export default function SignUpPage() {
                 className="border-border"
                 value={formData.lastName}
                 onChange={handleChange}
-                required
               />
             </div>
             <div className="flex flex-col space-y-1.5">

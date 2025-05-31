@@ -163,6 +163,13 @@ class ApiClient {
     return response.data;
   }
 
+  async getInviteDetails(code: string) {
+    const response = await this.client.get(
+      `/user-organizations/invites/${code}`
+    );
+    return response.data;
+  }
+
   async joinOrganization(code: string) {
     const response = await this.client.post(`/user-organizations/join/${code}`);
     const { organization } = response.data;
@@ -206,9 +213,9 @@ class ApiClient {
     return response.data;
   }
 
-  async removeUserFromOrganization(userOrgId: string) {
+  async removeUserFromOrganization(userId: string, orgId: string) {
     const response = await this.client.delete(
-      `/user-organizations/${userOrgId}`
+      `/user-organizations/${userId}/${orgId}`
     );
     return response.data;
   }
