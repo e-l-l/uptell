@@ -203,14 +203,42 @@ export function AppHistory({ app }: AppHistoryProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="space-y-1">
-          <CardTitle className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
-            {app.name} Status History
-          </CardTitle>
-          <CardDescription>
-            Status changes over time with {uptimePercentage}% uptime
-          </CardDescription>
+            <CardTitle>{app.name} Status History</CardTitle>
+          </div>
+
+          {!isLoading && segments.length > 0 && (
+            <>
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "w-3 h-3 rounded-full",
+                    currentStatus === "Operational" && "bg-green-500",
+                    currentStatus === "Degraded Performance" && "bg-yellow-400",
+                    currentStatus === "Partial Outage" && "bg-orange-500",
+                    currentStatus === "Major Outage" && "bg-red-500",
+                    currentStatus === "Unknown" && "bg-gray-400"
+                  )}
+                />
+                <span className="text-sm font-medium">
+                  Current: {currentStatus}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-muted-foreground">
+                  {uptimePercentage}% uptime
+                </span>
+              </div>
+
+              <span className="text-sm text-muted-foreground">
+                {segments.length} status periods
+              </span>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -288,40 +316,8 @@ export function AppHistory({ app }: AppHistoryProps) {
             </p>
           </div>
         ) : (
-          <>
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      "w-3 h-3 rounded-full",
-                      currentStatus === "Operational" && "bg-green-500",
-                      currentStatus === "Degraded Performance" &&
-                        "bg-yellow-400",
-                      currentStatus === "Partial Outage" && "bg-orange-500",
-                      currentStatus === "Major Outage" && "bg-red-500",
-                      currentStatus === "Unknown" && "bg-gray-400"
-                    )}
-                  />
-                  <span className="text-sm font-medium">
-                    Current: {currentStatus}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-muted-foreground">
-                    {uptimePercentage}% uptime
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-sm text-muted-foreground">
-                {segments.length} status periods
-              </div>
-            </div>
-
-            <div className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
               <div className="flex w-full h-8 rounded-lg overflow-hidden">
                 {segments.map((segment, i) => {
                   const widthPercent = (segment.duration / totalDuration) * 100;
@@ -343,11 +339,11 @@ export function AppHistory({ app }: AppHistoryProps) {
                   );
                 })}
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t border-border">
-                <span>{format(start, "MMM dd, yyyy HH:mm")}</span>
-                <span>{format(end, "MMM dd, yyyy HH:mm")}</span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            </div>
+
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>{format(start, "MMM dd, yyyy HH:mm")}</span>
+              <div className="flex items-center gap-4">
                 {Object.entries(statusColors).map(([status, colorClass]) => {
                   const statusSegments = segments.filter(
                     (seg) => seg.status === status
@@ -376,8 +372,9 @@ export function AppHistory({ app }: AppHistoryProps) {
                   );
                 })}
               </div>
+              <span>{format(end, "MMM dd, yyyy HH:mm")}</span>
             </div>
-          </>
+          </div>
         )}
       </CardContent>
     </Card>
