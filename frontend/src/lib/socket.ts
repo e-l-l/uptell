@@ -83,7 +83,6 @@ export function connectWebSocket(
         } else if (event.code === 1011) {
           console.error("WebSocket: Server error occurred");
         }
-
       };
 
       socket.onerror = (error) => {
@@ -105,7 +104,6 @@ export function connectWebSocket(
 
   // Return cleanup function
   return () => {
-
     if (socket) {
       // Clean close to prevent reconnection
       socket.close(1000, "Component unmounted");

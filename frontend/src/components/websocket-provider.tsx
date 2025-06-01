@@ -50,7 +50,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       connectionRef.current.cleanup();
     }
 
-
     const cleanup = connectWebSocket(
       currentOrg.id,
       (message: WebSocketMessage) => {
