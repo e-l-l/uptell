@@ -20,14 +20,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <Providers>
-        <body
-          suppressHydrationWarning
-          className={`${inter.variable} font-inter min-h-screen antialiased`}
-        >
-          {children}
-        </body>
-      </Providers>
+      <body
+        suppressHydrationWarning
+        className={`${inter.variable} font-inter min-h-screen antialiased`}
+      >
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

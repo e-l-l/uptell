@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Application, ApplicationStatus } from "./types";
 import { Plus, Pencil, Trash2, Save } from "lucide-react";
 import { ApplicationModal } from "./application-modal";
-import { Toaster } from "@/components/ui/sonner";
+
 import {
   useApplications,
   useCreateApplication,
@@ -324,7 +324,6 @@ export default function ApplicationsPage() {
         onSubmit={handleAddEdit}
         isLoading={createApplication.isPending || updateApplication.isPending}
       />
-      <Toaster />
     </div>
   );
 }

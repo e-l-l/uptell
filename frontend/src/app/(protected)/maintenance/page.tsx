@@ -33,7 +33,7 @@ import {
 import { Plus, Trash2, Pencil, Filter } from "lucide-react";
 import { Maintenance } from "./types";
 import { useState } from "react";
-import { Toaster } from "@/components/ui/sonner";
+
 import {
   useCreateMaintenance,
   useUpdateMaintenance,
@@ -356,8 +356,6 @@ export default function MaintenancePage() {
         onSubmit={handleSubmit}
         isLoading={createMaintenance.isPending || updateMaintenance.isPending}
       />
-
-      <Toaster />
     </div>
   );
 }

@@ -42,7 +42,7 @@ import {
 import { Plus, Trash2, Filter, X } from "lucide-react";
 import { Incident, IncidentStatus } from "./types";
 import { useState, useEffect } from "react";
-import { Toaster } from "@/components/ui/sonner";
+
 import {
   useCreateIncident,
   useCreateIncidentLog,
@@ -52,7 +52,7 @@ import {
 import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { IncidentModal } from "./incident-modal";
-import { toast } from "sonner";
+
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/spinner";
 import { getIncidentStatusColor } from "./utils";
@@ -105,14 +105,12 @@ export default function IncidentsPage() {
     if (incidentToDelete) {
       deleteIncident.mutate(incidentToDelete, {
         onSuccess: () => {
-          toast.success("Incident deleted successfully");
           setIncidentToDelete(null);
         },
         onError: () => {
-          toast.error("Failed to delete incident");
+          setIncidentToDelete(null);
         },
       });
-      setIncidentToDelete(null);
     }
   };
 
@@ -140,11 +138,10 @@ export default function IncidentsPage() {
           };
           createIncidentLog.mutate(log, {
             onSuccess: () => {
-              toast.success("Incident logged successfully");
               setIsModalOpen(false);
             },
             onError: () => {
-              toast.error("Failed to log incident");
+              // Error handled by global system
             },
           });
         },
@@ -518,7 +515,6 @@ export default function IncidentsPage() {
         onSubmit={handleSubmit}
         isLoading={createIncident.isPending || createIncidentLog.isPending}
       />
-      <Toaster />
     </div>
   );
 }

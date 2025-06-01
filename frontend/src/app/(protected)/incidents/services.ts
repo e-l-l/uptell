@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import {
   CreateIncidentData,
   CreateIncidentLogData,
@@ -9,6 +8,7 @@ import {
   PaginatedIncidentResponse,
 } from "./types";
 import { apiClient } from "@/lib/api-client";
+import { useApiMutation } from "@/hooks/useApiMutation";
 
 export const useIncidents = (
   orgId: string,
@@ -99,26 +99,17 @@ export const useOrgIncidentLogs = (orgId: string) => {
 };
 
 export const useCreateIncident = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useApiMutation({
     mutationFn: async (data: CreateIncidentData) => {
       return apiClient.post<Incident>("/incidents", data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["incidents"] });
-      toast.success("Incident created successfully");
-    },
-    onError: () => {
-      toast.error("Failed to create incident");
-    },
+    successMessage: "Incident created successfully",
+    invalidateQueries: ["incidents"],
   });
 };
 
 export const useUpdateIncident = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useApiMutation({
     mutationFn: async ({
       id,
       data,
@@ -128,33 +119,18 @@ export const useUpdateIncident = () => {
     }) => {
       return apiClient.patch<Incident>(`/incidents/${id}`, data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["incidents"] });
-      queryClient.invalidateQueries({
-        queryKey: ["incident", variables.id.toString()],
-      });
-      toast.success("Incident updated successfully");
-    },
-    onError: () => {
-      toast.error("Failed to update incident");
-    },
+    successMessage: "Incident updated successfully",
+    invalidateQueries: [["incidents"], ["incident"]],
   });
 };
 
 export const useDeleteIncident = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useApiMutation({
     mutationFn: async (id: string) => {
       return apiClient.delete(`/incidents/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["incidents"] });
-      toast.success("Incident deleted successfully");
-    },
-    onError: () => {
-      toast.error("Failed to delete incident");
-    },
+    successMessage: "Incident deleted successfully",
+    invalidateQueries: ["incidents"],
   });
 };
 
@@ -171,39 +147,11 @@ export const useIncidentLogs = (incidentId: string) => {
 };
 
 export const useCreateIncidentLog = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useApiMutation({
     mutationFn: async (data: CreateIncidentLogData) => {
-      return apiClient.post<IncidentLog>(
-        `/incidents/${data.incident_id}/logs`,
-        {
-          status: data.status,
-          message: data.message,
-          org_id: data.org_id,
-          time: new Date().toISOString(),
-        }
-      );
+      return apiClient.post<IncidentLog>("/incident-logs", data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["incident-logs", variables.incident_id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["incident", variables.incident_id],
-      });
-      // Also invalidate bulk logs cache
-      queryClient.invalidateQueries({
-        queryKey: ["bulk-incident-logs"],
-      });
-      // Invalidate organization logs cache
-      queryClient.invalidateQueries({
-        queryKey: ["org-incident-logs"],
-      });
-      toast.success("Log entry added successfully");
-    },
-    onError: () => {
-      toast.error("Failed to add log entry");
-    },
+    successMessage: "Incident log created successfully",
+    invalidateQueries: [["incident-logs"], ["incidents"], ["incident"]],
   });
 };

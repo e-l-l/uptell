@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { toast } from "sonner";
 import { Application, ApplicationStatus } from "./types";
 import { apiClient } from "@/lib/api-client";
 import { AppHistoryData } from "@/components/dashboard/types";
+import { useApiMutation } from "@/hooks/useApiMutation";
 
 interface CreateApplicationData {
   name: string;
@@ -143,26 +143,17 @@ export const useApplicationHistory = (
 };
 
 export const useCreateApplication = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useApiMutation({
     mutationFn: async (data: CreateApplicationData) => {
       return apiClient.post<Application>("/applications", data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      toast.success("Application created successfully");
-    },
-    onError: () => {
-      toast.error("Failed to create application");
-    },
+    successMessage: "Application created successfully",
+    invalidateQueries: ["applications"],
   });
 };
 
 export const useUpdateApplication = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useApiMutation({
     mutationFn: async ({
       id,
       data,
@@ -172,29 +163,17 @@ export const useUpdateApplication = () => {
     }) => {
       return apiClient.patch<Application>(`/applications/${id}`, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      toast.success("Application updated successfully");
-    },
-    onError: () => {
-      toast.error("Failed to update application");
-    },
+    successMessage: "Application updated successfully",
+    invalidateQueries: ["applications"],
   });
 };
 
 export const useDeleteApplication = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useApiMutation({
     mutationFn: async (id: string) => {
       return apiClient.delete(`/applications/${id}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications"] });
-      toast.success("Application deleted successfully");
-    },
-    onError: () => {
-      toast.error("Failed to delete application");
-    },
+    successMessage: "Application deleted successfully",
+    invalidateQueries: ["applications"],
   });
 };

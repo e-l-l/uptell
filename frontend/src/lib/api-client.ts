@@ -6,6 +6,7 @@ import {
   currentOrgAtom,
   Organization,
 } from "./atoms/auth";
+import { toast } from "sonner";
 
 interface ErrorResponse {
   detail?: string;
@@ -60,7 +61,11 @@ class ApiClient {
           method: error.config?.method,
         });
 
-        if (error.response?.status === 401) {
+        const status = error.response?.status;
+        const errorMessage = error.response?.data?.detail || error.message;
+
+        // Handle different types of errors
+        if (status === 401) {
           // Handle unauthorized access
           const errorDetail = error.response?.data?.detail || "";
 
@@ -75,6 +80,9 @@ class ApiClient {
             updateAuthState(this.store.set, null);
             this.store.set(currentOrgAtom, null);
 
+            // Show toast for session expiry
+            toast.error("Session expired. Please log in again.");
+
             // Only redirect if not already on auth pages
             const currentPath = window.location.pathname;
             if (
@@ -84,10 +92,46 @@ class ApiClient {
             ) {
               window.location.href = "/login";
             }
+          } else {
+            // Show generic unauthorized toast
+            toast.error("Unauthorized access. Please check your permissions.");
           }
+        } else if (status === 403) {
+          toast.error(
+            "Access forbidden. You don't have permission to perform this action."
+          );
+        } else if (status === 404) {
+          toast.error(
+            "Resource not found. The requested item may have been deleted."
+          );
+        } else if (status === 422) {
+          toast.error(
+            "Invalid data provided. Please check your input and try again."
+          );
+        } else if (status === 429) {
+          toast.error(
+            "Too many requests. Please wait a moment before trying again."
+          );
+        } else if (status && status >= 500) {
+          toast.error(
+            "Server error occurred. Please try again later or contact support."
+          );
+        } else if (
+          error.code === "ECONNABORTED" ||
+          error.message.includes("timeout")
+        ) {
+          toast.error(
+            "Request timed out. Please check your connection and try again."
+          );
+        } else if (error.code === "ERR_NETWORK" || !error.response) {
+          toast.error("Network error. Please check your internet connection.");
+        } else if (status && status >= 400 && status < 500) {
+          // Other client errors
+          toast.error(
+            errorMessage || "An error occurred while processing your request."
+          );
         }
 
-        const errorMessage = error.response?.data?.detail || error.message;
         return Promise.reject(new Error(errorMessage));
       }
     );
