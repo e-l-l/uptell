@@ -31,7 +31,7 @@ async def send_app_create_notifications(
             "user_id": user.id
         }, org_id=org_id)
     
-    await send_org_notification(
+    send_org_notification(
         org_id=org_id,
         action="created",
         entity_type="Application",
@@ -88,7 +88,7 @@ async def send_app_delete_notifications(
     # Run websocket broadcast and email notification in background
     await manager.broadcast({"type": "deleted_app", "data": {"id": app_data["id"]}, "user_id": user.id}, org_id=app_data["org_id"])
     
-    await send_org_notification(
+    send_org_notification(
         org_id=app_data["org_id"],
         action="deleted",
         entity_type="Application",

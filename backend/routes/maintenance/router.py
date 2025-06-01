@@ -3,9 +3,12 @@ from typing import List
 
 from routes.schemas.maintainance import Maintenance, MaintenanceCreate, MaintenanceUpdate
 from ..dependencies import get_supabase
-from websocket_manager import manager
-from utils.notification_service import send_org_notification
-import asyncio
+from .utils import (
+    send_maintenance_create_notifications,
+    send_maintenance_update_notifications,
+    send_maintenance_delete_notifications
+)
+
 router = APIRouter(prefix="/maintenance", tags=["Maintenance"])
 
 from fastapi.encoders import jsonable_encoder
@@ -20,43 +23,19 @@ async def create_maintenance(payload: MaintenanceCreate, supabase=Depends(get_su
     if not res.data:
         raise HTTPException(status_code=400, detail="Failed to create maintenance")
     
-    user = supabase.auth.get_user().user
-    
     # Get organization name
     org_res = supabase.table("orgs").select("name").eq("id", payload.org_id).execute()
     org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
     
-    # Get user name
-    user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
-    if not user_name:
-        user_name = user.email
+    await send_maintenance_create_notifications(
+        res.data[0], 
+        payload.org_id, 
+        org_name, 
+        supabase
+    )
     
     # Create Maintenance model instance to ensure proper datetime serialization
     maintenance = Maintenance(**res.data[0])
-    
-    # Broadcast the new maintenance event
-    asyncio.create_task(manager.broadcast(
-        {
-            "type": "new_maintenance",
-            "data": maintenance.model_dump(),
-            "user_id": user.id
-        },
-        org_id=payload.org_id
-    ))
-    
-    # Send email notification
-    asyncio.create_task(send_org_notification(
-        org_id=payload.org_id,
-        action="created",
-        entity_type="Maintenance",
-        entity_name=res.data[0]["title"],
-        user_name=user_name,
-        org_name=org_name,
-        additional_details=f"Scheduled from {res.data[0]['start_time']} to {res.data[0]['end_time']}",
-        exclude_user_id=user.id,
-        start_time=str(res.data[0]["start_time"]),
-        end_time=str(res.data[0]["end_time"])
-    ))
     
     return maintenance
 
@@ -86,47 +65,28 @@ def list_app_maintenance(app_id: str = Path(...), supabase=Depends(get_supabase)
 
 @router.patch("/{id}", response_model=Maintenance)
 async def update_maintenance(id: str, payload: MaintenanceUpdate, supabase=Depends(get_supabase)):
-    update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
+    # Convert the payload to a JSON-serializable format
+    serialized_payload = jsonable_encoder(payload)
+    print("SERIAL PAYMLOAD",serialized_payload)
+    # Filter out None values
+    update_data = {k: v for k, v in serialized_payload.items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
     
-    # Convert the update data to a JSON-serializable format
-    serialized_update_data = jsonable_encoder(update_data)
-    
-    res = supabase.table("maintenance").update(serialized_update_data).eq("id", id).execute()
+    res = supabase.table("maintenance").update(update_data).eq("id", id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Maintenance not found")
-    
-    user = supabase.auth.get_user().user
-    
     # Get organization name
     org_res = supabase.table("orgs").select("name").eq("id", res.data[0]["org_id"]).execute()
     org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
     
-    # Get user name
-    user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
-    if not user_name:
-        user_name = user.email
-    
+    await send_maintenance_update_notifications(
+        res.data[0], 
+        org_name, 
+        supabase
+    )
     # Create Maintenance model instance to ensure proper datetime serialization
     maintenance = Maintenance(**res.data[0])
-    
-    asyncio.create_task(manager.broadcast({"type": "updated_maintenance", "data": maintenance.model_dump(), "user_id": user.id}, org_id=res.data[0]["org_id"]))
-    
-    # Send email notification
-    asyncio.create_task(send_org_notification(
-        org_id=res.data[0]["org_id"],
-        action="updated",
-        entity_type="Maintenance",
-        entity_name=res.data[0]["title"],
-        user_name=user_name,
-        org_name=org_name,
-        additional_details=f"Status: {res.data[0]['status']}",
-        exclude_user_id=user.id,
-        status=res.data[0]["status"],
-        start_time=str(res.data[0]["start_time"]) if res.data[0].get("start_time") else None,
-        end_time=str(res.data[0]["end_time"]) if res.data[0].get("end_time") else None
-    ))
     
     return maintenance
 
@@ -136,31 +96,14 @@ async def delete_maintenance(id: str, supabase=Depends(get_supabase)):
     if not res.data:
         raise HTTPException(status_code=404, detail="Maintenance not found")
     
-    user = supabase.auth.get_user().user
-    
     # Get organization name
     org_res = supabase.table("orgs").select("name").eq("id", res.data[0]["org_id"]).execute()
     org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
     
-    # Get user name
-    user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
-    if not user_name:
-        user_name = user.email
-    
-    asyncio.create_task(manager.broadcast({"type": "deleted_maintenance", "data": {"id": id}, "user_id": user.id}, org_id=res.data[0]["org_id"]))
-    
-    # Send email notification
-    asyncio.create_task(send_org_notification(
-        org_id=res.data[0]["org_id"],
-        action="deleted",
-        entity_type="Maintenance",
-        entity_name=res.data[0]["title"],
-        user_name=user_name,
-        org_name=org_name,
-        exclude_user_id=user.id,
-        status=res.data[0]["status"],
-        start_time=str(res.data[0]["start_time"]) if res.data[0].get("start_time") else None,
-        end_time=str(res.data[0]["end_time"]) if res.data[0].get("end_time") else None
-    ))
+    await send_maintenance_delete_notifications(
+        res.data[0], 
+        org_name, 
+        supabase
+    )
     
     return {"message": "Maintenance deleted successfully"} 

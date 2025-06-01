@@ -1,10 +1,12 @@
-import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from typing import List
 from ..schemas import Log, LogCreate, LogUpdate
 from ..dependencies import get_supabase
-from websocket_manager import manager
-from utils.notification_service import send_org_notification
+from .utils import (
+    send_log_create_notifications,
+    send_log_update_notifications,
+    send_log_delete_notifications
+)
 
 router = APIRouter(prefix="/logs", tags=["Incident Logs"])
 
@@ -21,34 +23,17 @@ async def create_log(incident_id: str, payload: LogCreate, supabase=Depends(get_
     if not incident_res.data:
         raise HTTPException(status_code=404, detail="Incident not found")
     
-    user = supabase.auth.get_user().user
-    
     # Get organization name
     org_res = supabase.table("orgs").select("name").eq("id", incident_res.data[0]["org_id"]).execute()
     org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
     
-    # Get user name
-    user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
-    if not user_name:
-        user_name = user.email
-    
-    asyncio.create_task(manager.broadcast(
-        {"type": "new_log", "data": res.data[0], "user_id": user.id}, 
-        org_id=incident_res.data[0]["org_id"]
-    ))
-    
-    asyncio.create_task(send_org_notification(
-        org_id=incident_res.data[0]["org_id"],
-        action="created",
-        entity_type="Log",
-        entity_name=f"Status update for {incident_res.data[0]['title']}",
-        user_name=user_name,
-        org_name=org_name,
-        additional_details=f"Update: {res.data[0]['message']}",
-        exclude_user_id=user.id,
-        incident_name=incident_res.data[0]['title'],
-        log_status=res.data[0]['status']
-    ))
+    await send_log_create_notifications(
+        res.data[0],
+        incident_res.data[0]['title'],
+        incident_res.data[0]["org_id"],
+        org_name,
+        supabase
+    )
     
     return res.data[0]
 
@@ -77,34 +62,17 @@ async def update_log(log_id: str, payload: LogUpdate, supabase=Depends(get_supab
     # Get the incident to find the org_id and title
     incident_res = supabase.table("incidents").select("org_id, title").eq("id", res.data[0]["incident_id"]).execute()
     if incident_res.data:
-        user = supabase.auth.get_user().user
-        
         # Get organization name
         org_res = supabase.table("orgs").select("name").eq("id", incident_res.data[0]["org_id"]).execute()
         org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
         
-        # Get user name
-        user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
-        if not user_name:
-            user_name = user.email
-        
-        asyncio.create_task(manager.broadcast(
-            {"type": "updated_log", "data": res.data[0], "user_id": user.id}, 
-            org_id=incident_res.data[0]["org_id"]
-        ))
-        
-        asyncio.create_task(send_org_notification(
-            org_id=incident_res.data[0]["org_id"],
-            action="updated",
-            entity_type="Log",
-            entity_name=f"Status update for {incident_res.data[0]['title']}",
-            user_name=user_name,
-            org_name=org_name,
-            additional_details=f"Update: {res.data[0]['message']}",
-            exclude_user_id=user.id,
-            incident_name=incident_res.data[0]['title'],
-            log_status=res.data[0]['status']
-        ))
+        await send_log_update_notifications(
+            res.data[0],
+            incident_res.data[0]['title'],
+            incident_res.data[0]["org_id"],
+            org_name,
+            supabase
+        )
     
     return res.data[0]
 
@@ -117,33 +85,16 @@ async def delete_log(log_id: str, supabase=Depends(get_supabase)):
     # Get the incident to find the org_id and title
     incident_res = supabase.table("incidents").select("org_id, title").eq("id", res.data[0]["incident_id"]).execute()
     if incident_res.data:
-        user = supabase.auth.get_user().user
-        
         # Get organization name
         org_res = supabase.table("orgs").select("name").eq("id", incident_res.data[0]["org_id"]).execute()
         org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
         
-        # Get user name
-        user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
-        if not user_name:
-            user_name = user.email
-        
-        asyncio.create_task(manager.broadcast(
-            {"type": "deleted_log", "data": {"id": log_id}, "user_id": user.id}, 
-            org_id=incident_res.data[0]["org_id"]
-        ))
-        
-        asyncio.create_task(send_org_notification(
-            org_id=incident_res.data[0]["org_id"],
-            action="deleted",
-            entity_type="Log",
-            entity_name=f"Status update for {incident_res.data[0]['title']}",
-            user_name=user_name,
-            org_name=org_name,
-            additional_details=f"Deleted log entry: {res.data[0]['message']}",
-            exclude_user_id=user.id,
-            incident_name=incident_res.data[0]['title'],
-            log_status=res.data[0]['status']
-        ))
+        await send_log_delete_notifications(
+            res.data[0],
+            incident_res.data[0]['title'],
+            incident_res.data[0]["org_id"],
+            org_name,
+            supabase
+        )
     
     return {"message": "Log deleted successfully"} 

@@ -142,7 +142,6 @@ def _generate_specific_details(email_data: Dict[str, Any]) -> Dict[str, str]:
             # Incident Name, on Which Application, Status, by whom
             application_name = email_data.get("application_name", "Unknown Application")
             status = email_data.get("status", "Unknown")
-            severity = email_data.get("severity", "Unknown")
             html_details = f"""
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="color: #a1a1aa; font-size: 14px; font-weight: 500;">Incident Name:</span>
@@ -156,19 +155,14 @@ def _generate_specific_details(email_data: Dict[str, Any]) -> Dict[str, str]:
                             <span style="color: #a1a1aa; font-size: 14px; font-weight: 500;">Status:</span>
                             <span style="display: inline-block; background-color: #dc2626; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">{status}</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="color: #a1a1aa; font-size: 14px; font-weight: 500;">Severity:</span>
-                            <span style="display: inline-block; background-color: #ea580c; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">{severity}</span>
-                        </div>"""
+                        """
             text_details = f"""- Incident Name: {entity_name}
 - Application: {application_name}
-- Status: {status}
-- Severity: {severity}"""
+- Status: {status}"""
         
         elif action in ["updated", "deleted", "resolved"]:
             # Incident Name, New Status, updated by
             status = email_data.get("status", "Unknown")
-            severity = email_data.get("severity", "Unknown")
             status_color = "#16a34a" if action == "resolved" else "#dc2626"  # Green for resolved, red for others
             html_details = f"""
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -178,14 +172,10 @@ def _generate_specific_details(email_data: Dict[str, Any]) -> Dict[str, str]:
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="color: #a1a1aa; font-size: 14px; font-weight: 500;">{'Final ' if action == 'resolved' else 'New ' if action == 'updated' else ''}Status:</span>
                             <span style="display: inline-block; background-color: {status_color}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">{status}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="color: #a1a1aa; font-size: 14px; font-weight: 500;">Severity:</span>
-                            <span style="display: inline-block; background-color: #ea580c; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500;">{severity}</span>
                         </div>"""
             text_details = f"""- Incident Name: {entity_name}
 - {'Final ' if action == 'resolved' else 'New ' if action == 'updated' else ''}Status: {status}
-- Severity: {severity}"""
+"""
     
     elif entity_type == "Log":
         if action in ["created", "updated", "deleted"]:

@@ -1,5 +1,6 @@
 from typing import Optional
 import logging
+import os
 
 from .send_email import send_emails
 from .email_templates import generate_notification_email
@@ -23,7 +24,6 @@ def send_org_notification(
     end_time: Optional[str] = None,
     incident_name: Optional[str] = None,
     log_status: Optional[str] = None,
-    severity: Optional[str] = None,
 ):
     """
     Send email notifications to all users in an organization
@@ -43,7 +43,6 @@ def send_org_notification(
         end_time: End time (for maintenance)
         incident_name: Name of the incident (for logs)
         log_status: Status of the log entry
-        severity: Severity level (for incidents)
     """
     try:
         # Get admin client to access user data
@@ -84,7 +83,6 @@ def send_org_notification(
             "end_time": end_time,
             "incident_name": incident_name,
             "log_status": log_status,
-            "severity": severity
         }
         
         # Generate email content
@@ -109,15 +107,21 @@ def send_org_notification(
         
         emoji = emoji_map.get((entity_type, action), "📋")
         subject = f"{emoji} {entity_type} {action} in {org_name}"
-        # Send emails
-        send_emails(
-            to_emails=user_emails,
-            subject=subject,
-            html_body=html_body,
-            text_body=text_body
-        )
         
-        logger.info(f"Sent notification emails to {len(user_emails)} users for {entity_type} {action} in org {org_id}")
+        # Check if email notifications are enabled (default to False)
+        email_notifications_enabled = os.getenv("ENABLE_EMAIL_NOTIFICATIONS", "false").lower() == "true"
+        
+        if email_notifications_enabled:
+            # Send emails
+            send_emails(
+                to_emails=user_emails,
+                subject=subject,
+                html_body=html_body,
+                text_body=text_body
+            )
+            logger.info(f"Sent notification emails to {len(user_emails)} users for {entity_type} {action} in org {org_id}")
+        else:
+            logger.info(f"Email notifications disabled - skipped sending emails to {len(user_emails)} users for {entity_type} {action} in org {org_id}")
         
     except Exception as e:
         logger.error(f"Failed to send notification emails for org {org_id}: {str(e)}")
