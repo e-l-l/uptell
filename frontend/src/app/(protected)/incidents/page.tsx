@@ -43,12 +43,7 @@ import { Plus, Trash2, Filter, X } from "lucide-react";
 import { Incident, IncidentStatus } from "./types";
 import { useState, useEffect } from "react";
 
-import {
-  useCreateIncident,
-  useCreateIncidentLog,
-  useDeleteIncident,
-  useIncidents,
-} from "./services";
+import { useCreateIncident, useDeleteIncident, useIncidents } from "./services";
 import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { IncidentModal } from "./incident-modal";
@@ -68,11 +63,7 @@ export default function IncidentsPage() {
   const currentOrg = useAtomValue(currentOrgAtom);
   const pageLimit = 10;
 
-  const {
-    data: incidentsData,
-    isLoading: incidentsLoading,
-    refetch,
-  } = useIncidents(
+  const { data: incidentsData, isLoading: incidentsLoading } = useIncidents(
     currentOrg?.id ?? "",
     currentPage,
     pageLimit,
@@ -89,7 +80,6 @@ export default function IncidentsPage() {
     total_pages: 1,
   };
   const createIncident = useCreateIncident();
-  const createIncidentLog = useCreateIncidentLog();
   const deleteIncident = useDeleteIncident();
 
   const router = useRouter();
@@ -129,21 +119,8 @@ export default function IncidentsPage() {
         status: data.status,
       },
       {
-        onSuccess: (data) => {
-          const log = {
-            incident_id: data.id,
-            org_id: currentOrg?.id ?? "",
-            status: data.status,
-            message: data.description,
-          };
-          createIncidentLog.mutate(log, {
-            onSuccess: () => {
-              setIsModalOpen(false);
-            },
-            onError: () => {
-              // Error handled by global system
-            },
-          });
+        onSuccess: () => {
+          setIsModalOpen(false);
         },
       }
     );
@@ -513,7 +490,7 @@ export default function IncidentsPage() {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSubmit={handleSubmit}
-        isLoading={createIncident.isPending || createIncidentLog.isPending}
+        isLoading={createIncident.isPending}
       />
     </div>
   );

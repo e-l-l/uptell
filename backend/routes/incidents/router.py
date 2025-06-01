@@ -28,6 +28,21 @@ async def create_incident(payload: IncidentCreate, supabase=Depends(get_supabase
         
         incident_data = res.data[0]
         
+        # Create initial incident log
+        try:
+            log_data = {
+                "incident_id": incident_data["id"],
+                "org_id": payload.org_id,
+                "status": incident_data["status"],
+                "message": incident_data["description"]
+            }
+            log_res = supabase.table("incident_logs").insert(log_data).execute()
+            if not log_res.data:
+                logger.warning(f"Failed to create initial log for incident {incident_data['id']}")
+        except Exception as e:
+            logger.error(f"Failed to create initial incident log: {str(e)}")
+            # Don't fail the entire operation for log creation failure
+        
         # Get organization name
         try:
             org_res = supabase.table("orgs").select("name").eq("id", payload.org_id).execute()
