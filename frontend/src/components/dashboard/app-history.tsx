@@ -39,10 +39,8 @@ export function AppHistory({ app }: AppHistoryProps) {
   const [endDate, setEndDate] = useState<Date>();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Calculate date range based on selection
+  // Calculate date range based on selection with stabilized query key
   const dateRange = useMemo(() => {
-    const now = new Date();
-
     if (timeRange === "custom" && startDate && endDate) {
       // Set start date to beginning of day and end date to end of day
       const start = new Date(
@@ -74,7 +72,18 @@ export function AppHistory({ app }: AppHistoryProps) {
     };
 
     const days = ranges[timeRange as keyof typeof ranges] || 7;
-    const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    // For non-custom ranges, calculate based on current day to stabilize query key
+    // This prevents refetching when navigating back within the same hour
+    const now = new Date();
+    const currentDayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const start = new Date(
+      currentDayStart.getTime() - (days - 1) * 24 * 60 * 60 * 1000
+    );
 
     return { start, end: now };
   }, [timeRange, startDate, endDate]);
