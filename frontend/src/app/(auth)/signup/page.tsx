@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +19,7 @@ import { apiClient } from "@/lib/api-client";
 import { Eye, EyeOff } from "lucide-react";
 import { isAuthenticatedAtom } from "@/lib/atoms/auth";
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isAuthenticated] = useAtom(isAuthenticatedAtom);
@@ -205,5 +205,24 @@ export default function SignUpPage() {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="w-full max-w-md p-8 bg-card rounded-lg shadow-lg border border-border">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-[#8a8f98] bg-clip-text text-transparent">
+              Create an account
+            </CardTitle>
+            <CardDescription>Loading...</CardDescription>
+          </CardHeader>
+        </Card>
+      }
+    >
+      <SignUpForm />
+    </Suspense>
   );
 }

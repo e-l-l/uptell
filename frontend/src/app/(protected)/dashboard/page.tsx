@@ -32,7 +32,7 @@ export default function DashboardPage() {
     useMaintenance(currentOrg?.id || "");
 
   // Extract incidents from the paginated response
-  const incidents = incidentsResponse?.data || [];
+  const incidents = React.useMemo(() => incidentsResponse?.data || [], [incidentsResponse?.data]);
 
   // Memoized calculations to prevent unnecessary re-computations
   const metrics = React.useMemo(() => {
@@ -181,7 +181,7 @@ export default function DashboardPage() {
               />
             </div>
           ),
-          [incidents, applications, incidentsLoading, applicationsLoading]
+          [incidents, applications, incidentsLoading, applicationsLoading, currentOrg?.id]
         )}
       </section>
     </div>
