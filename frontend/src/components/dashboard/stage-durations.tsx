@@ -23,7 +23,6 @@ interface IncidentLog {
 }
 
 export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
-
   // Fetch logs for all incidents (we'll filter based on actual log data)
   const incidentsWithLogs = incidents;
 
@@ -55,7 +54,6 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
 
   // Calculate average stage durations from real logs
   const stageDurationData = React.useMemo(() => {
-
     if (!logsQueries.data || incidentsWithLogs.length === 0) return [];
 
     const stageCounts = {
