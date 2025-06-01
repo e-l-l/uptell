@@ -105,52 +105,100 @@ export function PublicIncidentTimeline({
     );
   }
 
+  // Group timeline entries by incident_id
+  const groupedTimeline = timeline.reduce((groups, entry) => {
+    const incidentId = entry.incident?.id || "no-incident";
+    if (!groups[incidentId]) {
+      groups[incidentId] = [];
+    }
+    groups[incidentId].push(entry);
+    return groups;
+  }, {} as Record<string, PublicTimelineEntry[]>);
+
+  // Sort each group by created_at (most recent first)
+  Object.keys(groupedTimeline).forEach((incidentId) => {
+    groupedTimeline[incidentId].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  });
+
+  // Sort groups by the most recent entry in each group
+  const sortedGroups = Object.entries(groupedTimeline).sort(
+    ([, aEntries], [, bEntries]) => {
+      const aMostRecent = new Date(aEntries[0].created_at).getTime();
+      const bMostRecent = new Date(bEntries[0].created_at).getTime();
+      return bMostRecent - aMostRecent;
+    }
+  );
+
   return (
-    <div className="space-y-4">
-      {timeline.map((entry) => {
-        const { date, time } = formatDate(entry.created_at);
+    <div className="space-y-6">
+      {sortedGroups.map(([incidentId, entries]) => (
+        <div key={incidentId} className="space-y-4">
+          {/* Incident header */}
+          {incidentId !== "no-incident" && entries[0].incident && (
+            <Card className="border-l-4 border-l-primary">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  {entries[0].incident.title}
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Incident Timeline • {entries.length} update
+                  {entries.length !== 1 ? "s" : ""}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
 
-        return (
-          <Card key={entry.id} className="transition-colors hover:bg-muted/50">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-4">
-                <div className="flex flex-col items-center">
-                  {getStatusIcon(entry.status)}
-                  <div className="w-px h-8 bg-border mt-2" />
-                </div>
+          {/* Timeline entries for this incident */}
+          <div className="space-y-3 ml-4">
+            {entries.map((entry, index) => {
+              const { date, time } = formatDate(entry.created_at);
+              const isLast = index === entries.length - 1;
 
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm">{time}</span>
-                    <Badge
-                      variant="secondary"
-                      className={getStatusColor(entry.status)}
-                    >
-                      {entry.status}
-                    </Badge>
-                    {entry.application && (
-                      <Badge variant="outline" className="text-xs">
-                        {entry.application.name}
-                      </Badge>
-                    )}
-                  </div>
+              return (
+                <Card
+                  key={entry.id}
+                  className="transition-colors hover:bg-muted/50"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className="flex flex-col items-center">
+                        {getStatusIcon(entry.status)}
+                        {!isLast && <div className="w-px h-8 bg-border mt-2" />}
+                      </div>
 
-                  <p className="text-sm">{entry.message}</p>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{time}</span>
+                          <Badge
+                            variant="secondary"
+                            className={getStatusColor(entry.status)}
+                          >
+                            {entry.status}
+                          </Badge>
+                          {entry.application && (
+                            <Badge variant="outline" className="text-xs">
+                              {entry.application.name}
+                            </Badge>
+                          )}
+                        </div>
 
-                  {entry.incident && (
-                    <div className="text-xs text-muted-foreground">
-                      <span className="font-medium">Incident:</span>{" "}
-                      {entry.incident.title}
+                        <p className="text-sm">{entry.message}</p>
+                        <div className="text-xs text-muted-foreground">
+                          {date}
+                        </div>
+                      </div>
                     </div>
-                  )}
-
-                  <div className="text-xs text-muted-foreground">{date}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
