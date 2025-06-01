@@ -133,6 +133,7 @@ export default function IncidentDetailsPage() {
     try {
       await createLogMutation.mutateAsync({
         incident_id: incidentId,
+        org_id: currentOrg?.id ?? "",
         status: logForm.status,
         message: logForm.message.trim(),
       });

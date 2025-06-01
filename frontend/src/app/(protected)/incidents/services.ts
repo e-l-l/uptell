@@ -148,6 +148,7 @@ export const useCreateIncidentLog = () => {
         {
           status: data.status,
           message: data.message,
+          org_id: data.org_id,
           time: new Date().toISOString(),
         }
       );

@@ -97,6 +97,7 @@ export default function IncidentsPage() {
         onSuccess: (data) => {
           const log = {
             incident_id: data.id,
+            org_id: currentOrg?.id ?? "",
             status: data.status,
             message: data.description,
           };

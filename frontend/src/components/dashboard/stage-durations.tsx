@@ -11,9 +11,14 @@ import { useBulkIncidentLogs } from "@/app/(protected)/incidents/services";
 interface StageDurationsProps {
   incidents: Incident[];
   isLoading: boolean;
+  orgId: string;
 }
 
-export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
+export function StageDurations({
+  incidents,
+  isLoading,
+  orgId,
+}: StageDurationsProps) {
   // Get incident IDs for bulk log fetching
   const incidentIds = React.useMemo(
     () => incidents.map((incident) => incident.id),

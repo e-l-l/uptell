@@ -164,12 +164,17 @@ export default function DashboardPage() {
               />
 
               {/* MTTR Chart */}
-              <MttrChart incidents={incidents} isLoading={incidentsLoading} />
+              <MttrChart
+                incidents={incidents}
+                isLoading={incidentsLoading}
+                orgId={currentOrg?.id || ""}
+              />
 
               {/* Stage Durations */}
               <StageDurations
                 incidents={incidents}
                 isLoading={incidentsLoading}
+                orgId={currentOrg?.id || ""}
               />
             </div>
           ),

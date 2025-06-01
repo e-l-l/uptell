@@ -16,9 +16,10 @@ import { useBulkIncidentLogs } from "@/app/(protected)/incidents/services";
 interface MttrChartProps {
   incidents: Incident[];
   isLoading: boolean;
+  orgId: string;
 }
 
-export function MttrChart({ incidents, isLoading }: MttrChartProps) {
+export function MttrChart({ incidents, isLoading, orgId }: MttrChartProps) {
   // Filter to only "Fixed" incidents for MTTR calculation
   const fixedIncidents = React.useMemo(
     () => incidents.filter((incident) => incident.status === "Fixed"),

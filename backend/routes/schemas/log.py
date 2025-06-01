@@ -5,6 +5,7 @@ from datetime import datetime
 class LogBase(BaseModel):
     status: str
     message: str
+    org_id: str
 
 class LogCreate(LogBase):
     pass

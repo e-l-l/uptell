@@ -32,6 +32,7 @@ export interface UpdateIncidentData {
 export interface IncidentLog {
   id: string;
   incident_id: string;
+  org_id: string;
   status: string;
   message: string;
   created_at: Date;
@@ -39,6 +40,7 @@ export interface IncidentLog {
 
 export interface CreateIncidentLogData {
   incident_id: string;
+  org_id: string;
   status: string;
   message: string;
 }
