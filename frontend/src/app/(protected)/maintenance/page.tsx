@@ -180,9 +180,23 @@ export default function MaintenancePage() {
     </div>
   );
 
+  const FilteredEmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 space-y-4">
+      <div className="rounded-full bg-muted p-6">
+        <Filter className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <div className="text-center space-y-2">
+        <h3 className="text-lg font-semibold">No maintenance found</h3>
+        <p className="text-muted-foreground">
+          No maintenance schedules found for the selected application.
+        </p>
+      </div>
+    </div>
+  );
+
   const MaintenanceTable = () => {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 w-full">
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-2xl font-semibold">Maintenance Schedule</h2>
@@ -218,97 +232,102 @@ export default function MaintenancePage() {
             </GradButton>
           </div>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Application</TableHead>
-              <TableHead>Start Time</TableHead>
-              <TableHead>End Time</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {maintenanceData.map((maintenance: Maintenance) => {
-              const status = getMaintenanceStatus(maintenance);
-              return (
-                <TableRow key={maintenance.id}>
-                  <TableCell className="font-medium">
-                    {maintenance.title}
-                  </TableCell>
-                  <TableCell>
-                    {getApplicationName(maintenance.app_id)}
-                  </TableCell>
-                  <TableCell>
-                    {formatMaintenanceDate(maintenance.start_time)}
-                  </TableCell>
-                  <TableCell>
-                    {formatMaintenanceDate(maintenance.end_time)}
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getMaintenanceStatusColor(
-                        status
-                      )}`}
-                    >
-                      {status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(maintenance)}
-                        disabled={updateMaintenance.isPending}
+
+        {maintenanceData.length === 0 ? (
+          <FilteredEmptyState />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Application</TableHead>
+                <TableHead>Start Time</TableHead>
+                <TableHead>End Time</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {maintenanceData.map((maintenance: Maintenance) => {
+                const status = getMaintenanceStatus(maintenance);
+                return (
+                  <TableRow key={maintenance.id}>
+                    <TableCell className="font-medium">
+                      {maintenance.title}
+                    </TableCell>
+                    <TableCell>
+                      {getApplicationName(maintenance.app_id)}
+                    </TableCell>
+                    <TableCell>
+                      {formatMaintenanceDate(maintenance.start_time)}
+                    </TableCell>
+                    <TableCell>
+                      {formatMaintenanceDate(maintenance.end_time)}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getMaintenanceStatusColor(
+                          status
+                        )}`}
                       >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog
-                        open={maintenanceToDelete === maintenance.id}
-                        onOpenChange={(open) =>
-                          !open && setMaintenanceToDelete(null)
-                        }
-                      >
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(maintenance.id)}
-                            disabled={deleteMaintenance.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will
-                              permanently delete the maintenance schedule.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={confirmDelete}
+                        {status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(maintenance)}
+                          disabled={updateMaintenance.isPending}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog
+                          open={maintenanceToDelete === maintenance.id}
+                          onOpenChange={(open) =>
+                            !open && setMaintenanceToDelete(null)
+                          }
+                        >
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(maintenance.id)}
                               disabled={deleteMaintenance.isPending}
                             >
-                              {deleteMaintenance.isPending
-                                ? "Deleting..."
-                                : "Delete"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will
+                                permanently delete the maintenance schedule.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={confirmDelete}
+                                disabled={deleteMaintenance.isPending}
+                              >
+                                {deleteMaintenance.isPending
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
       </div>
     );
   };
@@ -318,8 +337,12 @@ export default function MaintenancePage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      {maintenanceData.length === 0 ? <EmptyState /> : <MaintenanceTable />}
+    <div className="w-full p-4">
+      {allMaintenance.length === 0 && selectedAppFilter === "all" ? (
+        <EmptyState />
+      ) : (
+        <MaintenanceTable />
+      )}
 
       <MaintenanceModal
         open={isModalOpen}
