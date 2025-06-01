@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import List
-from ..schemas import Incident, IncidentCreate, IncidentUpdate
+from typing import List, Optional
+from ..schemas import Incident, IncidentCreate, IncidentUpdate, PaginatedIncidentResponse, PaginationMeta
+import math
 from ..dependencies import get_supabase
 from . import logs
 from .utils import (
@@ -38,15 +39,45 @@ async def create_incident(payload: IncidentCreate, supabase=Depends(get_supabase
     
     return res.data[0]
 
-@router.get("", response_model=List[Incident])
-def list_incidents(org_id: str = Query(...), supabase=Depends(get_supabase)):
+@router.get("", response_model=PaginatedIncidentResponse)
+def list_incidents(
+    org_id: str = Query(..., description="Organization ID"),
+    page: int = Query(1, ge=1, description="Page number (1-based)"),
+    limit: int = Query(10, ge=1, le=100, description="Number of items per page (max 100)"),
+    app_id: Optional[str] = Query(None, description="Filter by application ID"),
+    supabase=Depends(get_supabase)
+):
     if not org_id:
         raise HTTPException(status_code=400, detail="Organization ID is required")
     
-    res = supabase.table("incidents").select("*").eq("org_id", org_id).execute()
-    if not res.data:
-        return []
-    return res.data
+    # Calculate offset for pagination
+    offset = (page - 1) * limit
+    
+    # Build base query with org_id filter
+    query = supabase.table("incidents").select("*", count="exact").eq("org_id", org_id)
+    
+    # Add app_id filter if provided
+    if app_id:
+        query = query.eq("app_id", app_id)
+    
+    # Order by time (newest first) and apply pagination
+    query = query.order("time", desc=True).range(offset, offset + limit - 1)
+    
+    res = query.execute()
+    
+    # Get total count for pagination metadata
+    total_count = res.count if res.count is not None else 0
+    total_pages = math.ceil(total_count / limit) if total_count > 0 else 1
+    
+    return PaginatedIncidentResponse(
+        data=res.data or [],
+        pagination=PaginationMeta(
+            total=total_count,
+            page=page,
+            limit=limit,
+            total_pages=total_pages
+        )
+    )
 
 @router.get("/{incident_id}", response_model=Incident)
 def get_incident(incident_id: str, supabase=Depends(get_supabase)):

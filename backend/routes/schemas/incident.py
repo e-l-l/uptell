@@ -1,6 +1,18 @@
 from pydantic import BaseModel
-from typing import Literal, Optional
+from typing import Literal, Optional, List, Generic, TypeVar
 from datetime import datetime
+
+T = TypeVar('T')
+
+class PaginationMeta(BaseModel):
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    data: List[T]
+    pagination: PaginationMeta
 
 class IncidentBase(BaseModel):
     org_id: str
@@ -24,4 +36,7 @@ class Incident(IncidentBase):
     time: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+class PaginatedIncidentResponse(PaginatedResponse[Incident]):
+    pass 

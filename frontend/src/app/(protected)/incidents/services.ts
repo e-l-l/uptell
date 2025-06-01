@@ -6,17 +6,36 @@ import {
   Incident,
   IncidentLog,
   UpdateIncidentData,
+  PaginatedIncidentResponse,
 } from "./types";
 import { apiClient } from "@/lib/api-client";
 
-export const useIncidents = (orgId: string) => {
+export const useIncidents = (
+  orgId: string,
+  page: number = 1,
+  limit: number = 10,
+  appId?: string
+) => {
   return useQuery({
-    queryKey: ["incidents", orgId],
+    queryKey: ["incidents", orgId, page, limit, appId],
     queryFn: async () => {
-      if (!orgId) return [];
-      return apiClient.get<Incident[]>("/incidents", {
+      if (!orgId)
+        return {
+          data: [],
+          pagination: { total: 0, page: 1, limit: 10, total_pages: 1 },
+        };
+
+      const params: any = {
         org_id: orgId,
-      });
+        page,
+        limit,
+      };
+
+      if (appId) {
+        params.app_id = appId;
+      }
+
+      return apiClient.get<PaginatedIncidentResponse>("/incidents", params);
     },
     enabled: !!orgId,
     // Incidents change more frequently, shorter stale time

@@ -25,11 +25,14 @@ export default function DashboardPage() {
 
   const { data: applications = [], isLoading: applicationsLoading } =
     useApplications(currentOrg?.id);
-  const { data: incidents = [], isLoading: incidentsLoading } = useIncidents(
+  const { data: incidentsResponse, isLoading: incidentsLoading } = useIncidents(
     currentOrg?.id || ""
   );
   const { data: maintenance = [], isLoading: maintenanceLoading } =
     useMaintenance(currentOrg?.id || "");
+
+  // Extract incidents from the paginated response
+  const incidents = incidentsResponse?.data || [];
 
   // Memoized calculations to prevent unnecessary re-computations
   const metrics = React.useMemo(() => {

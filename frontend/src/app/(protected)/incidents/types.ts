@@ -44,3 +44,15 @@ export interface CreateIncidentLogData {
   status: string;
   message: string;
 }
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface PaginatedIncidentResponse {
+  data: Incident[];
+  pagination: PaginationMeta;
+}

@@ -31,6 +31,8 @@ from .incident import (
     IncidentCreate,
     IncidentUpdate,
     Incident,
+    PaginatedIncidentResponse,
+    PaginationMeta,
 )
 
 from .log import (
