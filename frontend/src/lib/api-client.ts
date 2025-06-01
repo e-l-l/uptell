@@ -1,6 +1,12 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestHeaders } from "axios";
 import { getDefaultStore } from "jotai";
-import { authAtom, authActions, Organization } from "./atoms/auth";
+import {
+  authAtom,
+  signIn,
+  signOut,
+  setCurrentOrg,
+  Organization,
+} from "./atoms/auth";
 import { toast } from "sonner";
 
 interface ErrorResponse {
@@ -81,7 +87,7 @@ class ApiClient {
             });
 
             // ATOMIC CLEAR - Single operation, no race conditions
-            authActions.clearAuth(this.store.set);
+            this.store.set(signOut);
 
             // Show toast for session expiry
             toast.error("Session expired. Please log in again.");
@@ -163,14 +169,14 @@ class ApiClient {
     const { access_token, token_type, user, org } = response.data;
 
     // ATOMIC SIGN IN - Single operation, no race conditions
-    authActions.signIn(this.store.set, user, { access_token, token_type }, org);
+    this.store.set(signIn, { user, token: { access_token, token_type }, org });
 
     return response.data;
   }
 
   signOut() {
     // ATOMIC SIGN OUT - Single operation
-    authActions.signOut(this.store.set);
+    this.store.set(signOut);
   }
 
   // Organization methods
@@ -191,11 +197,7 @@ class ApiClient {
 
   async setCurrentOrganization(org: Organization) {
     // ATOMIC ORG UPDATE - Preserves user and token state
-    authActions.setCurrentOrg(
-      () => this.store.get(authAtom),
-      this.store.set,
-      org
-    );
+    this.store.set(setCurrentOrg, org);
   }
 
   async createOrganizationInvite(
@@ -225,11 +227,7 @@ class ApiClient {
     const { organization } = response.data;
 
     // ATOMIC ORG UPDATE - Set the joined organization as current
-    authActions.setCurrentOrg(
-      () => this.store.get(authAtom),
-      this.store.set,
-      organization
-    );
+    this.store.set(setCurrentOrg, organization);
 
     return response.data;
   }
