@@ -18,6 +18,9 @@ export const useIncidents = (orgId: string) => {
         org_id: orgId,
       });
     },
+    enabled: !!orgId,
+    // Incidents change more frequently, shorter stale time
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 
@@ -28,6 +31,38 @@ export const useIncident = (incidentId: string) => {
       return apiClient.get<Incident>(`/incidents/${incidentId}`);
     },
     enabled: !!incidentId,
+    staleTime: 1 * 60 * 1000, // 1 minute for individual incidents
+  });
+};
+
+// Bulk incident logs fetcher for analytics optimization
+export const useBulkIncidentLogs = (incidentIds: string[]) => {
+  return useQuery({
+    queryKey: ["bulk-incident-logs", incidentIds.sort()], // Sort for consistent cache key
+    queryFn: async () => {
+      if (incidentIds.length === 0) return {};
+
+      // Fetch logs for all incidents in parallel
+      const logsPromises = incidentIds.map(async (incidentId) => {
+        try {
+          const logs = await apiClient.get<IncidentLog[]>(
+            `/incidents/${incidentId}/logs`
+          );
+          return { [incidentId]: logs };
+        } catch (error) {
+          console.error(
+            `Failed to fetch logs for incident ${incidentId}:`,
+            error
+          );
+          return { [incidentId]: [] };
+        }
+      });
+
+      const results = await Promise.all(logsPromises);
+      return results.reduce((acc, result) => ({ ...acc, ...result }), {});
+    },
+    enabled: incidentIds.length > 0,
+    staleTime: 3 * 60 * 1000, // 3 minutes for logs
   });
 };
 
@@ -98,6 +133,8 @@ export const useIncidentLogs = (incidentId: string) => {
     queryFn: async () => {
       return apiClient.get<IncidentLog[]>(`/incidents/${incidentId}/logs`);
     },
+    enabled: !!incidentId,
+    staleTime: 3 * 60 * 1000, // 30 seconds for logs (more real-time)
   });
 };
 
@@ -121,6 +158,10 @@ export const useCreateIncidentLog = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["incident", variables.incident_id],
+      });
+      // Also invalidate bulk logs cache
+      queryClient.invalidateQueries({
+        queryKey: ["bulk-incident-logs"],
       });
       toast.success("Log entry added successfully");
     },

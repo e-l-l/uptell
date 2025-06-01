@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, TrendingUp, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +19,10 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { AppHistoryData, AppHistoryProps } from "./types";
-import { apiClient } from "@/lib/api-client";
+import { AppHistoryProps } from "./types";
 import { getAppChartColors } from "@/app/(protected)/applications/utils";
 import { ApplicationStatus } from "@/app/(protected)/applications/types";
+import { useApplicationHistory } from "@/app/(protected)/applications/services";
 
 // Status to numerical value mapping for charting
 const statusValues = {
@@ -38,43 +38,9 @@ export function AppHistory({ app }: AppHistoryProps) {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [historyData, setHistoryData] = useState<AppHistoryData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
   // Calculate date range based on selection
-  const getApplicationHistory = async (
-    appId: string,
-    startTime?: Date,
-    endTime?: Date
-  ): Promise<AppHistoryData[] | undefined> => {
-    setIsLoading(true);
-    setError(null);
-    const params = new URLSearchParams();
-    if (startTime) params.append("start_time", startTime.toISOString());
-    if (endTime) params.append("end_time", endTime.toISOString());
-
-    try {
-      const response = await apiClient.get<AppHistoryData[]>(
-        `/applications/${appId}/history?${params}`
-      );
-      return response;
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  useEffect(() => {
-    const fetchHistory = async () => {
-      const history = await getApplicationHistory(app.id, startDate, endDate);
-      if (history) {
-        setHistoryData(history);
-      }
-    };
-    fetchHistory();
-  }, [app.id, startDate, endDate]);
-  const getDateRange = () => {
+  const dateRange = useMemo(() => {
     const now = new Date();
 
     if (timeRange === "custom" && startDate && endDate) {
@@ -92,12 +58,17 @@ export function AppHistory({ app }: AppHistoryProps) {
     const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
     return { start, end: now };
-  };
+  }, [timeRange, startDate, endDate]);
 
-  const { start, end } = getDateRange();
+  // Use the optimized application history hook
+  const {
+    data: historyData = [],
+    isLoading,
+    error,
+  } = useApplicationHistory(app.id, dateRange);
 
   // Transform data for the segmented bar chart
-  const createSegments = () => {
+  const createSegments = useMemo(() => {
     if (historyData.length === 0) return [];
 
     const sortedData = [...historyData].sort(
@@ -106,7 +77,7 @@ export function AppHistory({ app }: AppHistoryProps) {
     );
 
     const segments = [];
-    const { start: rangeStart, end: rangeEnd } = getDateRange();
+    const { start: rangeStart, end: rangeEnd } = dateRange;
 
     for (let i = 0; i < sortedData.length; i++) {
       const current = sortedData[i];
@@ -137,31 +108,37 @@ export function AppHistory({ app }: AppHistoryProps) {
     }
 
     return segments;
-  };
+  }, [historyData, dateRange]);
 
-  const segments = createSegments();
+  const segments = createSegments;
   const totalDuration = segments.reduce((acc, seg) => acc + seg.duration, 0);
 
   // Calculate uptime percentage
-  const uptimePercentage =
-    totalDuration > 0
-      ? Math.round(
-          (segments
-            .filter(
-              (seg) =>
-                seg.status === "Operational" ||
-                seg.status === "Degraded Performance" ||
-                seg.status === "Partial Outage"
-            )
-            .reduce((acc, seg) => acc + seg.duration, 0) /
-            totalDuration) *
-            100
-        )
-      : 100;
+  const uptimePercentage = useMemo(
+    () =>
+      totalDuration > 0
+        ? Math.round(
+            (segments
+              .filter(
+                (seg) =>
+                  seg.status === "Operational" ||
+                  seg.status === "Degraded Performance" ||
+                  seg.status === "Partial Outage"
+              )
+              .reduce((acc, seg) => acc + seg.duration, 0) /
+              totalDuration) *
+              100
+          )
+        : 100,
+    [segments, totalDuration]
+  );
 
   // Get current status
-  const currentStatus =
-    segments.length > 0 ? segments[segments.length - 1].status : app.status;
+  const currentStatus = useMemo(
+    () =>
+      segments.length > 0 ? segments[segments.length - 1].status : app.status,
+    [segments, app.status]
+  );
 
   const handleTimeRangeChange = (value: string) => {
     setTimeRange(value);
@@ -330,7 +307,7 @@ export function AppHistory({ app }: AppHistoryProps) {
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{format(start, "MMM dd, yyyy HH:mm")}</span>
+              <span>{format(dateRange.start, "MMM dd, yyyy HH:mm")}</span>
               <div className="flex items-center gap-4">
                 {Object.entries(statusValues).map(([status, _]) => {
                   const statusSegments = segments.filter(
@@ -364,7 +341,7 @@ export function AppHistory({ app }: AppHistoryProps) {
                   );
                 })}
               </div>
-              <span>{format(end, "MMM dd, yyyy HH:mm")}</span>
+              <span>{format(dateRange.end, "MMM dd, yyyy HH:mm")}</span>
             </div>
           </div>
         )}

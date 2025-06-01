@@ -5,62 +5,27 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Timer } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartConfig, ChartContainer, ChartTooltip } from "../ui/chart";
-import { Incident } from "@/app/(protected)/incidents/types";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { Incident, IncidentLog } from "@/app/(protected)/incidents/types";
+import { useBulkIncidentLogs } from "@/app/(protected)/incidents/services";
 
 interface StageDurationsProps {
   incidents: Incident[];
   isLoading: boolean;
 }
 
-interface IncidentLog {
-  id: string;
-  incident_id: string;
-  status: string;
-  message: string;
-  created_at: string;
-}
-
 export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
-  // Fetch logs for all incidents (we'll filter based on actual log data)
-  const incidentsWithLogs = incidents;
+  // Get incident IDs for bulk log fetching
+  const incidentIds = React.useMemo(
+    () => incidents.map((incident) => incident.id),
+    [incidents]
+  );
 
-  const logsQueries = useQuery({
-    queryKey: ["stage-durations-logs", incidentsWithLogs.map((i) => i.id)],
-    queryFn: async () => {
-      if (incidentsWithLogs.length === 0) return [];
+  // Use bulk logs service for better performance
+  const { data: bulkLogsData = {}, isLoading: logsLoading } =
+    useBulkIncidentLogs(incidentIds);
 
-      // Fetch logs for all incidents
-      const logsPromises = incidentsWithLogs.map(async (incident) => {
-        try {
-          const logs = await apiClient.get<IncidentLog[]>(
-            `/incidents/${incident.id}/logs`
-          );
-          return { incident, logs };
-        } catch (error) {
-          console.error(
-            `Failed to fetch logs for incident ${incident.id}:`,
-            error
-          );
-          return { incident, logs: [] };
-        }
-      });
-
-      return Promise.all(logsPromises);
-    },
-    enabled: incidentsWithLogs.length > 0,
-  });
-
-  // Calculate average stage durations from real logs
   const stageDurationData = React.useMemo(() => {
-    if (!logsQueries.data || incidentsWithLogs.length === 0) return [];
-
-    const stageCounts = {
-      Reported: 0,
-      Investigating: 0,
-      Identified: 0,
-    };
+    if (incidents.length === 0) return [];
 
     const stageDurations = {
       Reported: 0,
@@ -68,48 +33,45 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
       Identified: 0,
     };
 
-    logsQueries.data.forEach(({ incident, logs }) => {
-      if (logs.length === 0) return;
+    const stageCounts = {
+      Reported: 0,
+      Investigating: 0,
+      Identified: 0,
+    };
+
+    for (const incident of incidents) {
+      const logs = bulkLogsData[incident.id] || [];
+
+      if (logs.length === 0) continue;
 
       // Sort logs by creation time
       const sortedLogs = logs.sort(
-        (a, b) =>
+        (a: IncidentLog, b: IncidentLog) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
 
-      // Calculate durations between stages
-      for (let i = 0; i < sortedLogs.length; i++) {
+      // Calculate time spent in each stage
+      for (let i = 0; i < sortedLogs.length - 1; i++) {
         const currentLog = sortedLogs[i];
         const nextLog = sortedLogs[i + 1];
 
-        // Skip Fixed stage completely
-        if (currentLog.status === "Fixed") continue;
+        const stageStart = new Date(currentLog.created_at);
+        const stageEnd = new Date(nextLog.created_at);
+        const stageDurationHours =
+          (stageEnd.getTime() - stageStart.getTime()) / (1000 * 60 * 60);
 
-        if (nextLog) {
-          const duration =
-            (new Date(nextLog.created_at).getTime() -
-              new Date(currentLog.created_at).getTime()) /
-            (1000 * 60 * 60); // hours
-
-          // Add duration to the current stage
-          if (currentLog.status in stageDurations) {
-            stageDurations[currentLog.status as keyof typeof stageDurations] +=
-              Math.max(duration, 0.1);
-            stageCounts[currentLog.status as keyof typeof stageCounts]++;
-          }
-        } else {
-          // For the last stage (if it's not Fixed), calculate duration until now
-          const duration =
-            (Date.now() - new Date(currentLog.created_at).getTime()) /
-            (1000 * 60 * 60); // hours
-          if (currentLog.status in stageDurations) {
-            stageDurations[currentLog.status as keyof typeof stageDurations] +=
-              Math.max(duration, 0.1);
-            stageCounts[currentLog.status as keyof typeof stageCounts]++;
-          }
+        if (currentLog.status === "Reported") {
+          stageDurations.Reported += stageDurationHours;
+          stageCounts.Reported += 1;
+        } else if (currentLog.status === "Investigating") {
+          stageDurations.Investigating += stageDurationHours;
+          stageCounts.Investigating += 1;
+        } else if (currentLog.status === "Identified") {
+          stageDurations.Identified += stageDurationHours;
+          stageCounts.Identified += 1;
         }
       }
-    });
+    }
 
     // Calculate averages and format for chart
     const stageData = [
@@ -150,7 +112,8 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
 
     const result = stageData.filter((stage) => stage.duration > 0);
     return result;
-  }, [logsQueries.data, incidentsWithLogs]);
+  }, [incidents, bulkLogsData]);
+
   const chartConfig = {
     duration: {
       label: "Duration (hours)",
@@ -185,30 +148,23 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
     );
   }, [stageDurationData]);
 
-  const isDataLoading = isLoading || logsQueries.isLoading;
+  const isDataLoading = isLoading || logsLoading;
 
   return (
-    <Card className="flex flex-col justify-between">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Stage Durations</CardTitle>
+        <CardTitle className="text-base font-medium">Stage Durations</CardTitle>
         <Timer className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         {isDataLoading ? (
-          <div className="space-y-2">
-            <div className="text-2xl font-bold">...</div>
-            <p className="text-xs text-muted-foreground">Loading...</p>
+          <div className="flex items-center justify-center h-[200px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : stageDurationData.length === 0 ? (
-          <div className="text-center py-8 space-y-2">
-            <p className="text-sm text-muted-foreground">
-              No stage duration data available
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {incidents.length === 0
-                ? "No incidents found"
-                : `${incidents.length} incidents found, but no stage transitions detected`}
-            </p>
+          <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground">
+            <Timer className="h-8 w-8 mb-2 opacity-50" />
+            <p className="text-sm">No stage duration data available</p>
           </div>
         ) : (
           <div className="space-y-4">

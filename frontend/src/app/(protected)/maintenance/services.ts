@@ -16,6 +16,9 @@ export const useMaintenance = (orgId: string) => {
         org_id: orgId,
       });
     },
+    enabled: !!orgId,
+    // Maintenance doesn't change frequently
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -27,6 +30,7 @@ export const useMaintenanceByApp = (appId: string) => {
       return apiClient.get<Maintenance[]>(`/maintenance/app/${appId}`);
     },
     enabled: !!appId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 

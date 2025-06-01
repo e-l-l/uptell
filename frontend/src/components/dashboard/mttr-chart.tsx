@@ -10,99 +10,77 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "../ui/chart";
-import { Incident } from "@/app/(protected)/incidents/types";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api-client";
+import { Incident, IncidentLog } from "@/app/(protected)/incidents/types";
+import { useBulkIncidentLogs } from "@/app/(protected)/incidents/services";
 
 interface MttrChartProps {
   incidents: Incident[];
   isLoading: boolean;
 }
 
-interface IncidentWithResolutionTime extends Incident {
-  resolutionTimeHours?: number;
-}
-
 export function MttrChart({ incidents, isLoading }: MttrChartProps) {
-  // Fetch logs for all fixed incidents
-  const fixedIncidents = incidents.filter(
-    (incident) => incident.status === "Fixed"
+  // Filter to only "Fixed" incidents for MTTR calculation
+  const fixedIncidents = React.useMemo(
+    () => incidents.filter((incident) => incident.status === "Fixed"),
+    [incidents]
   );
 
-  const logsQueries = useQuery({
-    queryKey: ["mttr-logs", fixedIncidents.map((i) => i.id)],
-    queryFn: async () => {
-      if (fixedIncidents.length === 0) return [];
+  // Get incident IDs for bulk log fetching
+  const incidentIds = React.useMemo(
+    () => fixedIncidents.map((incident) => incident.id),
+    [fixedIncidents]
+  );
 
-      // Fetch logs for all fixed incidents
-      const logsPromises = fixedIncidents.map(async (incident) => {
-        try {
-          const logs = await apiClient.get<any[]>(
-            `/incidents/${incident.id}/logs`
-          );
-          return { incident, logs };
-        } catch (error) {
-          console.error(
-            `Failed to fetch logs for incident ${incident.id}:`,
-            error
-          );
-          return { incident, logs: [] };
-        }
-      });
+  // Use bulk logs service for better performance
+  const { data: bulkLogsData = {}, isLoading: logsLoading } =
+    useBulkIncidentLogs(incidentIds);
 
-      return Promise.all(logsPromises);
-    },
-    enabled: fixedIncidents.length > 0,
-  });
-
-  // Calculate MTTR data with real resolution times
   const mttrData = React.useMemo(() => {
-    if (!logsQueries.data || fixedIncidents.length === 0) return [];
+    if (fixedIncidents.length === 0) return [];
 
-    const incidentsWithResolutionTimes: IncidentWithResolutionTime[] = [];
+    // Calculate resolution time for each incident
+    const incidentsWithResolutionTime = [];
 
-    logsQueries.data.forEach(({ incident, logs }) => {
-      if (logs.length === 0) return;
+    for (const incident of fixedIncidents) {
+      const logs = bulkLogsData[incident.id] || [];
 
-      // Sort logs by creation time
+      if (logs.length === 0) continue;
+
+      // Sort logs by created_at time
       const sortedLogs = logs.sort(
-        (a, b) =>
+        (a: IncidentLog, b: IncidentLog) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
 
-      // Find the first log (incident creation) and the first "Fixed" log
       const firstLog = sortedLogs[0];
-      const fixedLog = sortedLogs.find((log) => log.status === "Fixed");
+      const fixedLog = sortedLogs.find(
+        (log: IncidentLog) => log.status === "Fixed"
+      );
 
       if (firstLog && fixedLog) {
-        const creationTime = new Date(firstLog.created_at);
-        const resolutionTime = new Date(fixedLog.created_at);
-        const resolutionTimeHours =
-          (resolutionTime.getTime() - creationTime.getTime()) /
-          (1000 * 60 * 60);
+        const startTime = new Date(firstLog.created_at);
+        const endTime = new Date(fixedLog.created_at);
+        const resolutionTimeMs = endTime.getTime() - startTime.getTime();
+        const resolutionTimeHours = resolutionTimeMs / (1000 * 60 * 60);
 
-        incidentsWithResolutionTimes.push({
+        incidentsWithResolutionTime.push({
           ...incident,
-          resolutionTimeHours: Math.max(resolutionTimeHours, 0.1), // Minimum 0.1 hours (6 minutes)
+          resolutionTimeHours,
         });
       }
-    });
+    }
 
-    if (incidentsWithResolutionTimes.length === 0) return [];
+    if (incidentsWithResolutionTime.length === 0) return [];
 
-    // Sort by incident time
-    const sortedIncidents = incidentsWithResolutionTimes.sort(
+    // Sort incidents by date
+    const sortedIncidents = incidentsWithResolutionTime.sort(
       (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
     );
 
-    // Group incidents by week for MTTR calculation
+    // Group by week and calculate weekly MTTR
     const weeklyData: Record<
       string,
-      {
-        incidents: IncidentWithResolutionTime[];
-        totalTime: number;
-        count: number;
-      }
+      { incidents: any[]; totalTime: number; count: number }
     > = {};
 
     sortedIncidents.forEach((incident) => {
@@ -135,7 +113,7 @@ export function MttrChart({ incidents, isLoading }: MttrChartProps) {
         }),
       }))
       .slice(-8); // Last 8 weeks
-  }, [logsQueries.data, fixedIncidents]);
+  }, [fixedIncidents, bulkLogsData]);
 
   const chartConfig = {
     mttr: {
@@ -157,79 +135,78 @@ export function MttrChart({ incidents, isLoading }: MttrChartProps) {
     return recent - previous;
   }, [mttrData]);
 
-  const isDataLoading = isLoading || logsQueries.isLoading;
+  const isDataLoading = isLoading || logsLoading;
 
   return (
-    <Card className="flex flex-col justify-between">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">
-          Mean Time To Resolve
-        </CardTitle>
+        <CardTitle className="text-base font-medium">MTTR Trend</CardTitle>
         <Clock className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         {isDataLoading ? (
-          <div className="space-y-2">
-            <div className="text-2xl font-bold">...</div>
-            <p className="text-xs text-muted-foreground">Loading...</p>
+          <div className="flex items-center justify-center h-[200px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         ) : mttrData.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-sm text-muted-foreground">
-              No resolved incidents found
-            </p>
+          <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground">
+            <Clock className="h-8 w-8 mb-2 opacity-50" />
+            <p className="text-sm">No resolution data available</p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="text-2xl font-bold">{averageMttr}h</div>
-              <div
-                className={`flex items-center gap-1 text-xs ${
-                  mttrTrend < 0
-                    ? "text-green-600"
-                    : mttrTrend > 0
-                    ? "text-red-600"
-                    : "text-gray-600"
-                }`}
-              >
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <TrendingUp
-                  className={`h-3 w-3 ${mttrTrend < 0 ? "rotate-180" : ""}`}
+                  className={`h-3 w-3 ${
+                    mttrTrend > 0 ? "text-red-500" : "text-green-500"
+                  }`}
                 />
-                {Math.abs(mttrTrend).toFixed(1)}h
+                <span>
+                  {mttrTrend > 0 ? "+" : ""}
+                  {mttrTrend.toFixed(1)}h from last week
+                </span>
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Average over last {mttrData.length} weeks
+              Average time to resolution: {mttrData.length} weeks of data
             </p>
 
-            <ChartContainer config={chartConfig} className="h-[200px] w-full">
-              <AreaChart accessibilityLayer data={mttrData}>
-                <CartesianGrid vertical={false} />
+            <ChartContainer config={chartConfig} className="h-[150px] w-full">
+              <AreaChart data={mttrData}>
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="date"
-                  tickLine={false}
+                  tick={{ fontSize: 10 }}
                   axisLine={false}
-                  tickMargin={8}
-                  fontSize={12}
-                />
-                <YAxis
                   tickLine={false}
-                  axisLine={false}
-                  tickMargin={4}
-                  fontSize={12}
                 />
+                <YAxis hide />
                 <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="line" />}
-                  labelFormatter={(label) => `Week of ${label}`}
-                  formatter={(value, name) => [`${value} hours`, "MTTR"]}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-background border border-border rounded-lg shadow-lg p-3 space-y-1">
+                          <div className="font-medium text-xs">{label}</div>
+                          <div className="text-xs">MTTR: {data.mttr} hours</div>
+                          <div className="text-xs text-muted-foreground">
+                            {data.incidents} incident
+                            {data.incidents !== 1 ? "s" : ""} resolved
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <Area
+                  type="monotone"
                   dataKey="mttr"
-                  type="natural"
-                  fill="var(--color-mttr)"
-                  fillOpacity={0.4}
                   stroke="var(--color-mttr)"
+                  fill="var(--color-mttr)"
+                  fillOpacity={0.6}
                   strokeWidth={2}
                 />
               </AreaChart>

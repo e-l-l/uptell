@@ -23,7 +23,6 @@ import { Computer } from "lucide-react";
 export default function DashboardPage() {
   const [currentOrg] = useAtom(currentOrgAtom);
 
-  // Fetch real data
   const { data: applications = [], isLoading: applicationsLoading } =
     useApplications(currentOrg?.id);
   const { data: incidents = [], isLoading: incidentsLoading } = useIncidents(
@@ -32,21 +31,29 @@ export default function DashboardPage() {
   const { data: maintenance = [], isLoading: maintenanceLoading } =
     useMaintenance(currentOrg?.id || "");
 
-  // Calculate metrics from real data
-  const totalApplications = applications.length;
-  const unfixedIncidents = incidents.filter(
-    (incident) => incident.status !== "Fixed"
-  ).length;
+  // Memoized calculations to prevent unnecessary re-computations
+  const metrics = React.useMemo(() => {
+    const totalApplications = applications.length;
+    const unfixedIncidents = incidents.filter(
+      (incident) => incident.status !== "Fixed"
+    ).length;
 
-  // Calculate system health based on applications with operational status
-  const operationalApps = applications.filter(
-    (app) =>
-      app.status === "Operational" ||
-      app.status === "Degraded Performance" ||
-      app.status === "Partial Outage"
-  ).length;
+    // Calculate system health based on applications with operational status
+    const operationalApps = applications.filter(
+      (app) =>
+        app.status === "Operational" ||
+        app.status === "Degraded Performance" ||
+        app.status === "Partial Outage"
+    ).length;
 
-  // Find next scheduled maintenance
+    return {
+      totalApplications,
+      unfixedIncidents,
+      operationalApps,
+    };
+  }, [applications, incidents]);
+
+  // Find next scheduled maintenance with memoization
   const nextMaintenance = React.useMemo(() => {
     const now = new Date();
     const upcomingMaintenance = maintenance.filter((m) => {
@@ -82,20 +89,20 @@ export default function DashboardPage() {
           {/* Applications Card */}
           <TotalAppsCard
             applicationsLoading={applicationsLoading}
-            totalApplications={totalApplications}
+            totalApplications={metrics.totalApplications}
           />
 
           {/* Unfixed Incidents Card */}
           <UnfixedIncidentsCard
             incidentsLoading={incidentsLoading}
-            unfixedIncidents={unfixedIncidents}
+            unfixedIncidents={metrics.unfixedIncidents}
           />
 
           {/* System Health Card */}
           <SystemHealthCard
             applicationsLoading={applicationsLoading}
-            operationalApps={operationalApps}
-            totalApplications={totalApplications}
+            operationalApps={metrics.operationalApps}
+            totalApplications={metrics.totalApplications}
           />
 
           {/* Next Maintenance Card */}
@@ -145,21 +152,29 @@ export default function DashboardPage() {
           <Badge variant="outline">{incidents.length} total</Badge>
         </div>
 
-        {/* Incident Analytics Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {/* Top Affected Apps */}
-          <TopAffectedApps
-            incidents={incidents}
-            applications={applications}
-            isLoading={incidentsLoading || applicationsLoading}
-          />
+        {/* Incident Analytics Grid - Memoized for performance */}
+        {React.useMemo(
+          () => (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {/* Top Affected Apps */}
+              <TopAffectedApps
+                incidents={incidents}
+                applications={applications}
+                isLoading={incidentsLoading || applicationsLoading}
+              />
 
-          {/* MTTR Chart */}
-          <MttrChart incidents={incidents} isLoading={incidentsLoading} />
+              {/* MTTR Chart */}
+              <MttrChart incidents={incidents} isLoading={incidentsLoading} />
 
-          {/* Stage Durations */}
-          <StageDurations incidents={incidents} isLoading={incidentsLoading} />
-        </div>
+              {/* Stage Durations */}
+              <StageDurations
+                incidents={incidents}
+                isLoading={incidentsLoading}
+              />
+            </div>
+          ),
+          [incidents, applications, incidentsLoading, applicationsLoading]
+        )}
       </section>
     </div>
   );

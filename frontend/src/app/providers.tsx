@@ -6,7 +6,27 @@ import { getDefaultStore } from "jotai";
 import { tokenAtom } from "@/lib/atoms/auth";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Cache data for 5 minutes to prevent redundant API calls
+            staleTime: 5 * 60 * 1000, // 5 minutes
+            // Keep unused data in cache for 10 minutes
+            gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+            // Reduce background refetching
+            refetchOnWindowFocus: false,
+            refetchOnMount: true,
+            refetchOnReconnect: true,
+            // Retry failed requests less aggressively
+            retry: 1,
+            retryDelay: (attemptIndex) =>
+              Math.min(1000 * 2 ** attemptIndex, 30000),
+          },
+        },
+      })
+  );
 
   useEffect(() => {
     // Rehydrate token from localStorage on app initialization
