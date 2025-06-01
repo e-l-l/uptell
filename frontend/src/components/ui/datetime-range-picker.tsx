@@ -152,11 +152,21 @@ export function DateTimeRangePicker({
               mode="single"
               selected={endDate}
               onSelect={handleEndDateChange}
-              disabled={(date) =>
-                startDate
-                  ? date < new Date(startDate.setHours(0, 0, 0, 0))
-                  : false
-              }
+              disabled={(date) => {
+                if (!startDate) return false;
+                // Create a new date for comparison without mutating startDate
+                const startDateOnly = new Date(
+                  startDate.getFullYear(),
+                  startDate.getMonth(),
+                  startDate.getDate()
+                );
+                const dateOnly = new Date(
+                  date.getFullYear(),
+                  date.getMonth(),
+                  date.getDate()
+                );
+                return dateOnly < startDateOnly;
+              }}
             />
             <div className="space-y-2">
               <Label className="text-sm flex items-center gap-2">

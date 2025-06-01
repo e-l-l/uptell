@@ -44,7 +44,26 @@ export function AppHistory({ app }: AppHistoryProps) {
     const now = new Date();
 
     if (timeRange === "custom" && startDate && endDate) {
-      return { start: startDate, end: endDate };
+      // Set start date to beginning of day and end date to end of day
+      const start = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        0,
+        0,
+        0,
+        0
+      );
+      const end = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate(),
+        23,
+        59,
+        59,
+        999
+      );
+      return { start, end };
     }
 
     const ranges = {
@@ -255,9 +274,22 @@ export function AppHistory({ app }: AppHistoryProps) {
                       mode="single"
                       selected={endDate}
                       onSelect={setEndDate}
-                      disabled={(date) =>
-                        startDate ? date < startDate : false
-                      }
+                      disabled={(date) => {
+                        if (!startDate) return false;
+                        // Compare only the date part, ignore time
+                        // Allow selecting the same date or later dates
+                        const dateOnly = new Date(
+                          date.getFullYear(),
+                          date.getMonth(),
+                          date.getDate()
+                        );
+                        const startDateOnly = new Date(
+                          startDate.getFullYear(),
+                          startDate.getMonth(),
+                          startDate.getDate()
+                        );
+                        return dateOnly < startDateOnly;
+                      }}
                     />
                   </div>
                 </div>
