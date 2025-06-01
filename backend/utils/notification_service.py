@@ -1,12 +1,13 @@
-from typing import List, Optional, Dict, Any
+from typing import Optional
 import logging
+
 from .send_email import send_emails
 from .email_templates import generate_notification_email
 from supabase_client import get_admin_client
 
 logger = logging.getLogger(__name__)
 
-async def send_org_notification(
+def send_org_notification(
     org_id: str,
     action: str,
     entity_type: str,
@@ -22,7 +23,7 @@ async def send_org_notification(
     end_time: Optional[str] = None,
     incident_name: Optional[str] = None,
     log_status: Optional[str] = None,
-    severity: Optional[str] = None
+    severity: Optional[str] = None,
 ):
     """
     Send email notifications to all users in an organization
@@ -108,7 +109,6 @@ async def send_org_notification(
         
         emoji = emoji_map.get((entity_type, action), "📋")
         subject = f"{emoji} {entity_type} {action} in {org_name}"
-        
         # Send emails
         send_emails(
             to_emails=user_emails,

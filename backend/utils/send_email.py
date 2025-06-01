@@ -3,10 +3,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import os
 from typing import List
+
 def send_emails(to_emails: List[str], subject: str, html_body: str, text_body: str):
     from_email = "prxthxm2@gmail.com"
     app_password = os.getenv("GMAIL_APP_PASSWORD")
-
     # Create message container
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
