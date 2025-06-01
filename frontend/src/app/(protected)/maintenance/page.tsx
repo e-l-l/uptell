@@ -44,7 +44,6 @@ import {
 import { useAtomValue } from "jotai";
 import { currentOrgAtom } from "@/lib/atoms/auth";
 import { MaintenanceModal } from "./maintenance-modal";
-import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/spinner";
 import {
   formatMaintenanceDate,
