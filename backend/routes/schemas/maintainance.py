@@ -13,6 +13,7 @@ class MaintenanceCreate(MaintenanceBase):
     pass
 
 class MaintenanceUpdate(BaseModel):
+    title: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
