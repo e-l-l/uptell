@@ -75,6 +75,15 @@ class ApiClient {
             errorDetail.includes("Invalid authentication token") ||
             errorDetail.includes("Missing authorization header")
           ) {
+            // Add debug logging before clearing auth state
+            console.warn("🔴 AUTH STATE CLEARED - Reason:", {
+              status,
+              errorDetail,
+              url: error.config?.url,
+              method: error.config?.method,
+              timestamp: new Date().toISOString(),
+            });
+
             // Clear auth state
             this.store.set(tokenAtom, null);
             updateAuthState(this.store.set, null);
@@ -167,6 +176,8 @@ class ApiClient {
   }
 
   signOut() {
+
+
     this.store.set(tokenAtom, null);
     updateAuthState(this.store.set, null);
     this.store.set(currentOrgAtom, null);

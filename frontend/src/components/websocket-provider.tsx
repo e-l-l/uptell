@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAtomValue } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,9 +19,37 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const currentOrg = useAtomValue(currentOrgAtom);
   const currentUser = useAtomValue(userAtom);
   const queryClient = useQueryClient();
+  const connectionRef = useRef<{
+    orgId: string | null;
+    cleanup: (() => void) | null;
+  }>({
+    orgId: null,
+    cleanup: null,
+  });
 
   useEffect(() => {
-    if (!currentOrg?.id) return;
+    if (!currentOrg?.id) {
+      // Clean up any existing connection when no org
+      if (connectionRef.current.cleanup) {
+        connectionRef.current.cleanup();
+        connectionRef.current = { orgId: null, cleanup: null };
+      }
+      return;
+    }
+
+    // Don't reconnect if we already have a connection for this org
+    if (
+      connectionRef.current.orgId === currentOrg.id &&
+      connectionRef.current.cleanup
+    ) {
+      return;
+    }
+
+    // Clean up any existing connection before creating a new one
+    if (connectionRef.current.cleanup) {
+      connectionRef.current.cleanup();
+    }
+
 
     const cleanup = connectWebSocket(
       currentOrg.id,
@@ -131,7 +159,19 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    return cleanup;
+    // Store the connection info
+    connectionRef.current = {
+      orgId: currentOrg.id,
+      cleanup,
+    };
+
+    // Cleanup function for this effect
+    return () => {
+      if (connectionRef.current.cleanup) {
+        connectionRef.current.cleanup();
+        connectionRef.current = { orgId: null, cleanup: null };
+      }
+    };
   }, [currentOrg?.id, currentUser?.id, queryClient]);
 
   return <>{children}</>;

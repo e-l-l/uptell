@@ -98,14 +98,42 @@ app.include_router(public_router)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    # Get org_id from query params
-    query_params = dict(websocket._query_params)
-    org_id = query_params.get("org_id")
-
-    await manager.connect(websocket, org_id)
-
+    org_id = None
     try:
-        while True:
-            await websocket.receive_text()
+        # Get org_id from query params
+        query_params = dict(websocket.query_params)
+        org_id = query_params.get("org_id")
+        
+        if not org_id:
+            logger.error("WebSocket connection attempted without org_id")
+            await websocket.close(code=1008, reason="Missing org_id parameter")
+            return
+        
+        logger.info(f"WebSocket connection request for org_id: {org_id}")
+        
+        # Connect to the manager
+        await manager.connect(websocket, org_id)
+        logger.info(f"WebSocket connected successfully for org_id: {org_id}")
+
+        # Keep the connection alive
+        try:
+            while True:
+                # Wait for any message (we don't actually process client messages)
+                await websocket.receive_text()
+        except WebSocketDisconnect:
+            logger.info(f"WebSocket disconnected normally for org_id: {org_id}")
+        except Exception as e:
+            logger.error(f"WebSocket error during message handling for org_id {org_id}: {str(e)}")
+            
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        logger.info(f"WebSocket disconnected during setup for org_id: {org_id}")
+    except Exception as e:
+        logger.error(f"WebSocket connection error for org_id {org_id}: {str(e)}")
+        try:
+            await websocket.close(code=1011, reason="Internal server error")
+        except:
+            pass  # Connection might already be closed
+    finally:
+        # Ensure cleanup happens
+        if org_id:
+            manager.disconnect(websocket)

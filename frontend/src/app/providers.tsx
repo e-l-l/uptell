@@ -1,9 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
-import { getDefaultStore } from "jotai";
-import { tokenAtom } from "@/lib/atoms/auth";
+import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/error-boundary";
 
@@ -29,20 +27,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         },
       })
   );
-
-  useEffect(() => {
-    // Rehydrate token from localStorage on app initialization
-    const store = getDefaultStore();
-    const storedToken = localStorage.getItem("auth_token");
-    if (storedToken) {
-      try {
-        const parsedToken = JSON.parse(storedToken);
-        store.set(tokenAtom, parsedToken);
-      } catch (error) {
-        console.error("Error rehydrating token:", error);
-      }
-    }
-  }, []);
 
   return (
     <ErrorBoundary>
