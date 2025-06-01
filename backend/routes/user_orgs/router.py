@@ -52,21 +52,21 @@ def list_organization_users(org_id: str, supabase=Depends(get_supabase)):
         logger.error(f"Failed to list users for organization {org_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve organization users")
 
-@router.patch("/{id}", response_model=UserOrganization)
-def update_user_organization(id: str, payload: UserOrganizationUpdate, supabase=Depends(get_supabase)):
+@router.patch("/{user_id}/{org_id}", response_model=UserOrganization)
+def update_user_organization(user_id: str, org_id: str, payload: UserOrganizationUpdate, supabase=Depends(get_supabase)):
     update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
     
     try:
-        res = supabase.table("user_orgs").update(update_data).eq("id", id).execute()
+        res = supabase.table("user_orgs").update(update_data).eq("user_id", user_id).eq("org_id", org_id).execute()
         if not res.data:
-            raise HTTPException(status_code=404, detail=f"User organization with ID {id} not found")
+            raise HTTPException(status_code=404, detail=f"User organization relationship not found for user {user_id} and org {org_id}")
         return res.data[0]
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error updating user organization {id}: {str(e)}")
+        logger.error(f"Unexpected error updating user organization {user_id}/{org_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to update user organization")
 
 @router.delete("/{user_id}/{org_id}")

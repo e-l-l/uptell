@@ -180,6 +180,45 @@ export default function IncidentsPage() {
     </div>
   );
 
+  const FilteredEmptyState = () => (
+    <div className="flex flex-col items-center justify-start pt-16">
+      <div className="flex flex-col items-center gap-6 max-w-md text-center">
+        <div className="rounded-full bg-muted/50 p-6">
+          <Filter className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <div className="space-y-2 flex flex-col items-center gap-2">
+          <h2 className="text-3xl font-semibold tracking-tight">
+            No Incidents Found
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            No incidents match your current filters. Try adjusting your search
+            criteria or clear the filters.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            size="lg"
+            className="gap-2"
+            onClick={clearFilters}
+          >
+            <X className="h-5 w-5" />
+            Clear Filters
+          </Button>
+          <GradButton
+            size="lg"
+            className="gap-2"
+            onClick={() => setIsModalOpen(true)}
+            disabled={createIncident.isPending}
+          >
+            <Plus className="h-5 w-5" />
+            Report Incident
+          </GradButton>
+        </div>
+      </div>
+    </div>
+  );
+
   const FilterSection = () => (
     <div className="border border-border rounded-lg p-4 space-y-4 bg-card">
       <div className="flex items-center justify-between">
@@ -475,13 +514,20 @@ export default function IncidentsPage() {
     );
   };
 
+  // Check if any filters are currently active
+  const hasActiveFilters = selectedAppId;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-1 flex-col gap-4 p-4">
         {incidentsLoading ? (
           <LoadingState />
         ) : incidents.length === 0 ? (
-          <EmptyState />
+          hasActiveFilters ? (
+            <FilteredEmptyState />
+          ) : (
+            <EmptyState />
+          )
         ) : (
           <IncidentsTable />
         )}

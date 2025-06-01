@@ -247,9 +247,13 @@ class ApiClient {
     return response.data;
   }
 
-  async updateUserRole(userOrgId: string, role: "owner" | "member") {
+  async updateUserRole(
+    userId: string,
+    orgId: string,
+    role: "owner" | "member"
+  ) {
     const response = await this.client.patch(
-      `/user-organizations/${userOrgId}`,
+      `/user-organizations/${userId}/${orgId}`,
       {
         role,
       }

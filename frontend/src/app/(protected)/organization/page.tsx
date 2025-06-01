@@ -46,7 +46,7 @@ export default function OrganizationPage() {
     newRole: "owner" | "member"
   ) => {
     try {
-      await apiClient.updateUserRole(membershipId, newRole);
+      await apiClient.updateUserRole(membershipId, currentOrg!.id, newRole);
       toast.success(`Role updated successfully`);
       // Invalidate and refetch the query
       queryClient.invalidateQueries({
