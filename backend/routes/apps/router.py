@@ -36,7 +36,8 @@ async def create_application(payload: ApplicationCreate, supabase=Depends(get_su
         entity_name=res.data[0]["name"],
         user_name=user_name,
         org_name=org_name,
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"]
     ))
     
     supabase.table("app_status_history").insert({
@@ -93,7 +94,8 @@ async def update_application(app_id: str, payload: ApplicationUpdate, supabase=D
         user_name=user_name,
         org_name=org_name,
         additional_details=f"Status changed to {res.data[0]['status']}" if 'status' in update_data else "",
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"]
     ))
     
     supabase.table("app_status_history").insert({
@@ -128,7 +130,8 @@ async def delete_application(app_id: str, supabase=Depends(get_supabase)):
         entity_name=res.data[0]["name"],
         user_name=user_name,
         org_name=org_name,
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"]
     ))
     
     return {"message": "Application deleted successfully"} 

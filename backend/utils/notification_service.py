@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import logging
 from .send_email import send_emails
 from .email_templates import generate_notification_email
@@ -14,7 +14,15 @@ async def send_org_notification(
     user_name: str,
     org_name: str,
     additional_details: str = "",
-    exclude_user_id: Optional[str] = None
+    exclude_user_id: Optional[str] = None,
+    # New parameters for structured data
+    status: Optional[str] = None,
+    application_name: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    incident_name: Optional[str] = None,
+    log_status: Optional[str] = None,
+    severity: Optional[str] = None
 ):
     """
     Send email notifications to all users in an organization
@@ -26,8 +34,15 @@ async def send_org_notification(
         entity_name: Name of the entity
         user_name: Name of the user who performed the action
         org_name: Name of the organization
-        additional_details: Additional details about the action
+        additional_details: Additional details about the action (for backwards compatibility)
         exclude_user_id: User ID to exclude from notifications (usually the user who performed the action)
+        status: Current status of the entity
+        application_name: Name of the application (for incidents)
+        start_time: Start time (for maintenance)
+        end_time: End time (for maintenance)
+        incident_name: Name of the incident (for logs)
+        log_status: Status of the log entry
+        severity: Severity level (for incidents)
     """
     try:
         # Get admin client to access user data
@@ -54,15 +69,25 @@ async def send_org_notification(
             logger.info(f"No other users to notify in organization {org_id}")
             return
         
+        # Build structured data for email template
+        email_data = {
+            "action": action,
+            "entity_type": entity_type,
+            "entity_name": entity_name,
+            "user_name": user_name,
+            "org_name": org_name,
+            "additional_details": additional_details,
+            "status": status,
+            "application_name": application_name,
+            "start_time": start_time,
+            "end_time": end_time,
+            "incident_name": incident_name,
+            "log_status": log_status,
+            "severity": severity
+        }
+        
         # Generate email content
-        html_body, text_body = generate_notification_email(
-            action=action,
-            entity_type=entity_type,
-            entity_name=entity_name,
-            user_name=user_name,
-            org_name=org_name,
-            additional_details=additional_details
-        )
+        html_body, text_body = generate_notification_email(email_data)
         
         # Create subject
         emoji_map = {
@@ -72,11 +97,13 @@ async def send_org_notification(
             ("Incident", "created"): "🚨",
             ("Incident", "updated"): "📝",
             ("Incident", "resolved"): "✅",
-            ("Incident", "deleted"): "✅",
+            ("Incident", "deleted"): "🗑️",
             ("Maintenance", "created"): "🔧",
             ("Maintenance", "updated"): "🔧",
             ("Maintenance", "deleted"): "🗑️",
             ("Log", "created"): "📝",
+            ("Log", "updated"): "📝",
+            ("Log", "deleted"): "🗑️",
         }
         
         emoji = emoji_map.get((entity_type, action), "📋")

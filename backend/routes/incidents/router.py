@@ -24,6 +24,10 @@ async def create_incident(payload: IncidentCreate, supabase=Depends(get_supabase
     org_res = supabase.table("orgs").select("name").eq("id", payload.org_id).execute()
     org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
     
+    # Get application name
+    app_res = supabase.table("apps").select("name").eq("id", payload.app_id).execute()
+    application_name = app_res.data[0]["name"] if app_res.data else "Unknown Application"
+    
     # Get user name
     user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
     if not user_name:
@@ -39,7 +43,10 @@ async def create_incident(payload: IncidentCreate, supabase=Depends(get_supabase
         user_name=user_name,
         org_name=org_name,
         additional_details=f"Severity: {res.data[0]['severity']}",
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"],
+        application_name=application_name,
+        severity=res.data[0]["severity"]
     ))
     
     return res.data[0]
@@ -77,6 +84,10 @@ async def update_incident(incident_id: str, payload: IncidentUpdate, supabase=De
     org_res = supabase.table("orgs").select("name").eq("id", res.data[0]["org_id"]).execute()
     org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
     
+    # Get application name
+    app_res = supabase.table("apps").select("name").eq("id", res.data[0]["app_id"]).execute()
+    application_name = app_res.data[0]["name"] if app_res.data else "Unknown Application"
+    
     # Get user name
     user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
     if not user_name:
@@ -92,7 +103,10 @@ async def update_incident(incident_id: str, payload: IncidentUpdate, supabase=De
         user_name=user_name,
         org_name=org_name,
         additional_details=f"Status: {res.data[0]['status']}, Severity: {res.data[0]['severity']}",
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"],
+        application_name=application_name,
+        severity=res.data[0]["severity"]
     ))
     
     return res.data[0]
@@ -109,6 +123,10 @@ async def delete_incident(incident_id: str, supabase=Depends(get_supabase)):
     org_res = supabase.table("orgs").select("name").eq("id", res.data[0]["org_id"]).execute()
     org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
     
+    # Get application name
+    app_res = supabase.table("apps").select("name").eq("id", res.data[0]["app_id"]).execute()
+    application_name = app_res.data[0]["name"] if app_res.data else "Unknown Application"
+    
     # Get user name
     user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
     if not user_name:
@@ -118,12 +136,15 @@ async def delete_incident(incident_id: str, supabase=Depends(get_supabase)):
     
     asyncio.create_task(send_org_notification(
         org_id=res.data[0]["org_id"],
-        action="resolved",
+        action="deleted",
         entity_type="Incident",
         entity_name=res.data[0]["title"],
         user_name=user_name,
         org_name=org_name,
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"],
+        application_name=application_name,
+        severity=res.data[0]["severity"]
     ))
     
     return {"message": "Incident deleted successfully"} 

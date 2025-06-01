@@ -45,7 +45,9 @@ async def create_log(incident_id: str, payload: LogCreate, supabase=Depends(get_
         user_name=user_name,
         org_name=org_name,
         additional_details=f"Update: {res.data[0]['message']}",
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        incident_name=incident_res.data[0]['title'],
+        log_status=res.data[0]['status']
     ))
     
     return res.data[0]
@@ -63,7 +65,7 @@ def get_log(log_id: str, supabase=Depends(get_supabase)):
     return res.data[0]
 
 @router.patch("/{log_id}", response_model=Log)
-def update_log(log_id: str, payload: LogUpdate, supabase=Depends(get_supabase)):
+async def update_log(log_id: str, payload: LogUpdate, supabase=Depends(get_supabase)):
     update_data = {k: v for k, v in payload.dict().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -71,11 +73,77 @@ def update_log(log_id: str, payload: LogUpdate, supabase=Depends(get_supabase)):
     res = supabase.table("incident_logs").update(update_data).eq("id", log_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Log not found")
+    
+    # Get the incident to find the org_id and title
+    incident_res = supabase.table("incidents").select("org_id, title").eq("id", res.data[0]["incident_id"]).execute()
+    if incident_res.data:
+        user = supabase.auth.get_user().user
+        
+        # Get organization name
+        org_res = supabase.table("orgs").select("name").eq("id", incident_res.data[0]["org_id"]).execute()
+        org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
+        
+        # Get user name
+        user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
+        if not user_name:
+            user_name = user.email
+        
+        asyncio.create_task(manager.broadcast(
+            {"type": "updated_log", "data": res.data[0], "user_id": user.id}, 
+            org_id=incident_res.data[0]["org_id"]
+        ))
+        
+        asyncio.create_task(send_org_notification(
+            org_id=incident_res.data[0]["org_id"],
+            action="updated",
+            entity_type="Log",
+            entity_name=f"Status update for {incident_res.data[0]['title']}",
+            user_name=user_name,
+            org_name=org_name,
+            additional_details=f"Update: {res.data[0]['message']}",
+            exclude_user_id=user.id,
+            incident_name=incident_res.data[0]['title'],
+            log_status=res.data[0]['status']
+        ))
+    
     return res.data[0]
 
 @router.delete("/{log_id}")
-def delete_log(log_id: str, supabase=Depends(get_supabase)):
+async def delete_log(log_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("incident_logs").delete().eq("id", log_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Log not found")
+    
+    # Get the incident to find the org_id and title
+    incident_res = supabase.table("incidents").select("org_id, title").eq("id", res.data[0]["incident_id"]).execute()
+    if incident_res.data:
+        user = supabase.auth.get_user().user
+        
+        # Get organization name
+        org_res = supabase.table("orgs").select("name").eq("id", incident_res.data[0]["org_id"]).execute()
+        org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
+        
+        # Get user name
+        user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
+        if not user_name:
+            user_name = user.email
+        
+        asyncio.create_task(manager.broadcast(
+            {"type": "deleted_log", "data": {"id": log_id}, "user_id": user.id}, 
+            org_id=incident_res.data[0]["org_id"]
+        ))
+        
+        asyncio.create_task(send_org_notification(
+            org_id=incident_res.data[0]["org_id"],
+            action="deleted",
+            entity_type="Log",
+            entity_name=f"Status update for {incident_res.data[0]['title']}",
+            user_name=user_name,
+            org_name=org_name,
+            additional_details=f"Deleted log entry: {res.data[0]['message']}",
+            exclude_user_id=user.id,
+            incident_name=incident_res.data[0]['title'],
+            log_status=res.data[0]['status']
+        ))
+    
     return {"message": "Log deleted successfully"} 

@@ -53,7 +53,9 @@ async def create_maintenance(payload: MaintenanceCreate, supabase=Depends(get_su
         user_name=user_name,
         org_name=org_name,
         additional_details=f"Scheduled from {res.data[0]['start_time']} to {res.data[0]['end_time']}",
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        start_time=str(res.data[0]["start_time"]),
+        end_time=str(res.data[0]["end_time"])
     ))
     
     return maintenance
@@ -120,7 +122,10 @@ async def update_maintenance(id: str, payload: MaintenanceUpdate, supabase=Depen
         user_name=user_name,
         org_name=org_name,
         additional_details=f"Status: {res.data[0]['status']}",
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"],
+        start_time=str(res.data[0]["start_time"]) if res.data[0].get("start_time") else None,
+        end_time=str(res.data[0]["end_time"]) if res.data[0].get("end_time") else None
     ))
     
     return maintenance
@@ -152,7 +157,10 @@ async def delete_maintenance(id: str, supabase=Depends(get_supabase)):
         entity_name=res.data[0]["title"],
         user_name=user_name,
         org_name=org_name,
-        exclude_user_id=user.id
+        exclude_user_id=user.id,
+        status=res.data[0]["status"],
+        start_time=str(res.data[0]["start_time"]) if res.data[0].get("start_time") else None,
+        end_time=str(res.data[0]["end_time"]) if res.data[0].get("end_time") else None
     ))
     
     return {"message": "Maintenance deleted successfully"} 
