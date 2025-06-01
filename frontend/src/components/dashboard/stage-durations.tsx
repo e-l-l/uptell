@@ -60,14 +60,12 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
       Reported: 0,
       Investigating: 0,
       Identified: 0,
-      Fixed: 0,
     };
 
     const stageDurations = {
       Reported: 0,
       Investigating: 0,
       Identified: 0,
-      Fixed: 0,
     };
 
     logsQueries.data.forEach(({ incident, logs }) => {
@@ -84,6 +82,9 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
         const currentLog = sortedLogs[i];
         const nextLog = sortedLogs[i + 1];
 
+        // Skip Fixed stage completely
+        if (currentLog.status === "Fixed") continue;
+
         if (nextLog) {
           const duration =
             (new Date(nextLog.created_at).getTime() -
@@ -98,16 +99,13 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
           }
         } else {
           // For the last stage (if it's not Fixed), calculate duration until now
-          if (currentLog.status !== "Fixed") {
-            const duration =
-              (Date.now() - new Date(currentLog.created_at).getTime()) /
-              (1000 * 60 * 60); // hours
-            if (currentLog.status in stageDurations) {
-              stageDurations[
-                currentLog.status as keyof typeof stageDurations
-              ] += Math.max(duration, 0.1);
-              stageCounts[currentLog.status as keyof typeof stageCounts]++;
-            }
+          const duration =
+            (Date.now() - new Date(currentLog.created_at).getTime()) /
+            (1000 * 60 * 60); // hours
+          if (currentLog.status in stageDurations) {
+            stageDurations[currentLog.status as keyof typeof stageDurations] +=
+              Math.max(duration, 0.1);
+            stageCounts[currentLog.status as keyof typeof stageCounts]++;
           }
         }
       }
@@ -148,15 +146,6 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
         count: stageCounts.Identified,
         fill: "var(--color-Identified)",
       },
-      {
-        stage: "Fixed",
-        duration:
-          stageCounts.Fixed > 0
-            ? Math.round((stageDurations.Fixed / stageCounts.Fixed) * 100) / 100
-            : 0,
-        count: stageCounts.Fixed,
-        fill: "var(--color-Fixed)",
-      },
     ];
 
     const result = stageData.filter((stage) => stage.duration > 0);
@@ -178,10 +167,6 @@ export function StageDurations({ incidents, isLoading }: StageDurationsProps) {
     Identified: {
       label: "Identified",
       color: "#d9c88f",
-    },
-    Fixed: {
-      label: "Fixed",
-      color: "#7ed987",
     },
   } satisfies ChartConfig;
 
