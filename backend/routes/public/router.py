@@ -260,4 +260,39 @@ def get_org_stats_overview(org_id: str, supabase=Depends(get_public_supabase)):
         raise
     except Exception as e:
         logger.error(f"Unexpected error getting overview for organization {org_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve organization overview") 
+        raise HTTPException(status_code=500, detail="Failed to retrieve organization overview")
+
+@router.get("/app/{app_name}/status")
+def get_app_status_by_name(app_name: str, supabase=Depends(get_public_supabase)):
+    """Get status of an application by its name"""
+    try:
+        # Search for apps with the given name
+        try:
+            res = supabase.table("apps").select("*, org:orgs(id, name)").eq("name", app_name).execute()
+            
+            if not res.data:
+                raise HTTPException(status_code=404, detail=f"Application with name '{app_name}' not found")
+            
+            apps = res.data
+            
+            # If multiple apps with same name exist, return all of them with organization info
+            if len(apps) > 1:
+                return {
+                    "message": f"Multiple applications found with name '{app_name}'",
+                    "count": len(apps),
+                    "applications": apps
+                }
+            else:
+                return apps[0]
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to get app status for '{app_name}': {str(e)}")
+            raise HTTPException(status_code=500, detail="Failed to retrieve application status")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error getting app status for '{app_name}': {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve application status") 
