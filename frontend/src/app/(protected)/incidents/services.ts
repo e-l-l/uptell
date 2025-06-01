@@ -149,7 +149,11 @@ export const useIncidentLogs = (incidentId: string) => {
 export const useCreateIncidentLog = () => {
   return useApiMutation({
     mutationFn: async (data: CreateIncidentLogData) => {
-      return apiClient.post<IncidentLog>("/incident-logs", data);
+      const { incident_id, ...bodyData } = data;
+      return apiClient.post<IncidentLog>(
+        `/incidents/${incident_id}/logs`,
+        bodyData
+      );
     },
     successMessage: "Incident log created successfully",
     invalidateQueries: [["incident-logs"], ["incidents"], ["incident"]],
