@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiClient } from "@/lib/api-client";
-import { userAtom } from "@/lib/atoms/auth";
+import { authAtom } from "@/lib/atoms/auth";
 import { toast } from "sonner";
 import {
   Building2,
@@ -31,9 +31,14 @@ export default function JoinWithCodePage() {
   const router = useRouter();
   const params = useParams();
   const code = params.code as string;
-  const [user] = useAtom(userAtom);
+  const [{ user, isAuthenticated }] = useAtom(authAtom);
   const [isJoining, setIsJoining] = useState(false);
   const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login?redirect=/join/" + code);
+    }
+  }, [isAuthenticated, router, code]);
 
   // Fetch invite details
   const {
@@ -82,10 +87,6 @@ export default function JoinWithCodePage() {
 
   const getRoleBadgeVariant = (role: string) => {
     return role === "owner" ? "default" : "secondary";
-  };
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   if (isLoading) {

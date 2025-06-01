@@ -29,7 +29,7 @@ class UserOrganizationUpdate(BaseModel):
     role: Optional[Literal["owner", "member"]] = None
 
 class UserOrganization(UserOrganizationBase):
-
+    organization: Optional[Organization] = None
     class Config:
         from_attributes = True
 

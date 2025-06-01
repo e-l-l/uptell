@@ -123,4 +123,13 @@ def join_organization(code: str, supabase=Depends(get_supabase)):
     # Delete the used invite
     supabase.table("org_invites").delete().eq("code", code).execute()
     
-    return res.data[0]
+    # Get organization details including the key
+    org_res = supabase.table("orgs").select("*").eq("id", invite["org_id"]).execute()
+    if not org_res.data:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    # Add organization key to the response
+    response_data = res.data[0]
+    response_data["organization"] = org_res.data[0]
+    
+    return response_data
