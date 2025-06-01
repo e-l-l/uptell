@@ -37,6 +37,8 @@
   --color-unknown-bg-dark: #a88fd9;
   --color-unknown-fg: #3f3d56;
   --color-unknown-fg-dark: #252433;
+
+  --color-destructive: #ff6b6b;
 }
 
 @layer base {
