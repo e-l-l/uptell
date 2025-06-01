@@ -133,46 +133,55 @@ export function PublicIncidentTimeline({
   );
 
   return (
-    <div className="space-y-6">
-      {sortedGroups.map(([incidentId, entries]) => (
-        <div key={incidentId} className="space-y-4">
+    <div className="space-y-8">
+      {sortedGroups.map(([incidentId, entries], groupIndex) => (
+        <div key={incidentId} className="relative">
           {/* Incident header */}
           {incidentId !== "no-incident" && entries[0].incident && (
-            <Card className="border-l-4 border-l-primary">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  {entries[0].incident.title}
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Incident Timeline • {entries.length} update
-                  {entries.length !== 1 ? "s" : ""}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <div className="mb-6">
+              <Card className="border-l-4 border-l-primary">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    {entries[0].incident.title}
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Incident Timeline • {entries.length} update
+                    {entries.length !== 1 ? "s" : ""}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
           )}
 
-          {/* Timeline entries for this incident */}
-          <div className="space-y-3 ml-4">
-            {entries.map((entry, index) => {
-              const { date, time } = formatDate(entry.created_at);
-              const isLast = index === entries.length - 1;
+          {/* Timeline container */}
+          <div className="relative pl-8">
+            {/* Main timeline line */}
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
 
-              return (
-                <Card
-                  key={entry.id}
-                  className="transition-colors hover:bg-muted/50"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div className="flex flex-col items-center">
+            {/* Timeline entries */}
+            <div className="space-y-6">
+              {entries.map((entry, index) => {
+                const { date, time } = formatDate(entry.created_at);
+                const isLast = index === entries.length - 1;
+
+                return (
+                  <div key={entry.id} className="relative group">
+                    {/* Timeline dot/icon */}
+                    <div className="absolute -left-[1.875rem] top-1 z-10">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-background border-2 border-border group-hover:border-primary transition-colors">
                         {getStatusIcon(entry.status)}
-                        {!isLast && <div className="w-px h-8 bg-border mt-2" />}
                       </div>
+                    </div>
 
-                      <div className="flex-1 space-y-2">
+                    {/* Content */}
+                    <div className="bg-card border border-border rounded-lg p-4 ml-2 hover:bg-muted/50 transition-colors">
+                      <div className="space-y-3">
+                        {/* Header with time and status */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm">{time}</span>
+                          <span className="font-semibold text-sm text-foreground">
+                            {time}
+                          </span>
                           <Badge
                             variant="secondary"
                             className={getStatusColor(entry.status)}
@@ -184,18 +193,26 @@ export function PublicIncidentTimeline({
                               {entry.application.name}
                             </Badge>
                           )}
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            {date}
+                          </span>
                         </div>
 
-                        <p className="text-sm">{entry.message}</p>
-                        <div className="text-xs text-muted-foreground">
-                          {date}
-                        </div>
+                        {/* Message */}
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {entry.message}
+                        </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+
+                    {/* Connector to next group */}
+                    {isLast && groupIndex < sortedGroups.length - 1 && (
+                      <div className="absolute -left-[1.5625rem] top-10 w-0.5 h-6 bg-border" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       ))}
