@@ -22,37 +22,7 @@ import {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
-      {/* Navigation */}
-      <nav className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">uptell</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/stats">
-                <Button variant="ghost" size="sm">
-                  <Globe className="w-4 h-4 mr-2" />
-                  Public Status
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm">Get Started</Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div className="bg-gradient-to-br from-background via-background to-accent/5">
       {/* Hero Section */}
       <section className="relative py-20 sm:py-32">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -263,7 +233,6 @@ export default function Home() {
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
-              {/* <Link href="/contact"> */}
               <Button
                 variant="outline"
                 size="lg"
@@ -272,54 +241,10 @@ export default function Home() {
               >
                 Contact Sales
               </Button>
-              {/* </Link> */}
             </div>
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-12 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-                <Shield className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold">uptell</span>
-            </div>
-            {/* <div className="flex space-x-6 text-sm text-muted-foreground">
-              <Link
-                href="/privacy"
-                className="hover:text-foreground transition-colors"
-              >
-                Privacy
-              </Link>
-              <Link
-                href="/terms"
-                className="hover:text-foreground transition-colors"
-              >
-                Terms
-              </Link>
-              <Link
-                href="/docs"
-                className="hover:text-foreground transition-colors"
-              >
-                Documentation
-              </Link>
-              <Link
-                href="/support"
-                className="hover:text-foreground transition-colors"
-              >
-                Support
-              </Link>
-            </div> */}
-          </div>
-          <div className="mt-8 pt-8 border-t border-border/40 text-center text-sm text-muted-foreground">
-            © 2025 uptell. All rights reserved.
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
