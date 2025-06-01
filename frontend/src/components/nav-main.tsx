@@ -64,7 +64,7 @@ export function NavMain() {
                   ${
                     isActive
                       ? "bg-background-active shadow-sm"
-                      : "hover:bg-background-muted"
+                      : "hover:bg-background-muted group-data-[state=collapsed]:hover:bg-transparent"
                   }
                 `}
               >
@@ -72,7 +72,7 @@ export function NavMain() {
                   {item.icon && (
                     <item.icon
                       className={`
-                      h-5 w-5 transition-transform duration-200 group-hover:scale-110
+                      h-5 w-5 transition-transform duration-200 group-hover:scale-110 group-data-[state=collapsed]:group-hover:scale-100
                       ${isActive ? "text-sidebar-primary-foreground" : ""}
                     `}
                     />

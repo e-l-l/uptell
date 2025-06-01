@@ -73,7 +73,7 @@ export function NavUser() {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton className="w-full justify-between h-11 rounded-lg transition-all duration-200 hover:bg-sidebar-accent/70 px-3 border border-border hover:border-border/50">
+            <SidebarMenuButton className="w-full justify-between h-11 rounded-lg transition-all duration-200 hover:bg-sidebar-accent/70 group-data-[state=collapsed]:hover:bg-transparent px-3 border border-border hover:border-border/50 group-data-[state=collapsed]:hover:border-border">
               <div className="flex items-center gap-3">
                 <div className="h-6 rounded bg-sidebar-primary/10 flex items-center justify-center">
                   <Building2 className="h-4 w-4 text-sidebar-primary" />
@@ -124,7 +124,7 @@ export function NavUser() {
       <SidebarMenuItem>
         <SidebarMenuButton
           onClick={handleSignOut}
-          className="w-full justify-start h-11 rounded-lg transition-all duration-200 text-destructive hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-border px-3 cursor-pointer"
+          className="w-full justify-start h-11 rounded-lg transition-all duration-200 text-destructive hover:text-destructive hover:bg-destructive/10 group-data-[state=collapsed]:hover:bg-transparent border border-transparent hover:border-border group-data-[state=collapsed]:hover:border-transparent px-3 cursor-pointer"
         >
           <div className="h-6 rounded flex items-center justify-center">
             <LogOut className="h-4 w-4" />

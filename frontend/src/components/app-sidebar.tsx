@@ -17,7 +17,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar
       collapsible="icon"
-      className="border-border bg-background-secondary backdrop-blur-sm"
+      className="border-border bg-background-secondary overflow-hidden group-data-[state=collapsed]:pointer-events-auto group-data-[state=collapsed]:[&_*]:transition-none"
       {...props}
     >
       <SidebarHeader className="flex flex-row items-center px-2 py-6 border-b border-border">
@@ -28,10 +28,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </h2>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="group-data-[state=collapsed]:pointer-events-none group-data-[state=collapsed]:overflow-hidden">
         <NavMain />
       </SidebarContent>
-      <SidebarFooter className="py-4 border-t border-border">
+      <SidebarFooter className="py-4 border-t border-border group-data-[state=collapsed]:pointer-events-none group-data-[state=collapsed]:overflow-hidden">
         <NavUser />
       </SidebarFooter>
       <SidebarRail />
