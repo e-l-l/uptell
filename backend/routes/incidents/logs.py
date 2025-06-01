@@ -43,6 +43,11 @@ def list_logs(incident_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("incident_logs").select("*").eq("incident_id", incident_id).execute()
     return res.data
 
+@router.get("/org/{org_id}", response_model=List[Log])
+def list_logs_by_org(org_id: str, supabase=Depends(get_supabase)):
+    res = supabase.table("incident_logs").select("*").eq("org_id", org_id).execute()
+    return res.data
+
 @router.get("/{log_id}", response_model=Log)
 def get_log(log_id: str, supabase=Depends(get_supabase)):
     res = supabase.table("incident_logs").select("*").eq("id", log_id).execute()

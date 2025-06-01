@@ -6,7 +6,7 @@ import { Timer } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartConfig, ChartContainer, ChartTooltip } from "../ui/chart";
 import { Incident, IncidentLog } from "@/app/(protected)/incidents/types";
-import { useBulkIncidentLogs } from "@/app/(protected)/incidents/services";
+import { useOrgIncidentLogs } from "@/app/(protected)/incidents/services";
 
 interface StageDurationsProps {
   incidents: Incident[];
@@ -19,15 +19,21 @@ export function StageDurations({
   isLoading,
   orgId,
 }: StageDurationsProps) {
-  // Get incident IDs for bulk log fetching
-  const incidentIds = React.useMemo(
-    () => incidents.map((incident) => incident.id),
-    [incidents]
-  );
+  // Use organization-based logs service for better performance
+  const { data: allOrgLogs = [], isLoading: logsLoading } =
+    useOrgIncidentLogs(orgId);
 
-  // Use bulk logs service for better performance
-  const { data: bulkLogsData = {}, isLoading: logsLoading } =
-    useBulkIncidentLogs(incidentIds);
+  // Group logs by incident ID for easier access
+  const bulkLogsData = React.useMemo(() => {
+    const groupedLogs: Record<string, IncidentLog[]> = {};
+    allOrgLogs.forEach((log) => {
+      if (!groupedLogs[log.incident_id]) {
+        groupedLogs[log.incident_id] = [];
+      }
+      groupedLogs[log.incident_id].push(log);
+    });
+    return groupedLogs;
+  }, [allOrgLogs]);
 
   const stageDurationData = React.useMemo(() => {
     if (incidents.length === 0) return [];

@@ -66,6 +66,19 @@ export const useBulkIncidentLogs = (incidentIds: string[]) => {
   });
 };
 
+// Organization-based bulk logs fetcher - much more efficient for dashboard analytics
+export const useOrgIncidentLogs = (orgId: string) => {
+  return useQuery({
+    queryKey: ["org-incident-logs", orgId],
+    queryFn: async () => {
+      if (!orgId) return [];
+      return apiClient.get<IncidentLog[]>(`/incidents/0/logs/org/${orgId}`);
+    },
+    enabled: !!orgId,
+    staleTime: 3 * 60 * 1000, // 3 minutes for logs
+  });
+};
+
 export const useCreateIncident = () => {
   const queryClient = useQueryClient();
 
@@ -163,6 +176,10 @@ export const useCreateIncidentLog = () => {
       // Also invalidate bulk logs cache
       queryClient.invalidateQueries({
         queryKey: ["bulk-incident-logs"],
+      });
+      // Invalidate organization logs cache
+      queryClient.invalidateQueries({
+        queryKey: ["org-incident-logs"],
       });
       toast.success("Log entry added successfully");
     },

@@ -99,6 +99,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({
               queryKey: ["incidents"],
             });
+            // Also invalidate organization-wide logs cache
+            queryClient.invalidateQueries({
+              queryKey: ["org-incident-logs"],
+            });
             break;
 
           case "new_maintenance":

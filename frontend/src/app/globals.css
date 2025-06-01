@@ -39,6 +39,11 @@
   --color-unknown-fg-dark: #252433;
 
   --color-destructive: #ff6b6b;
+
+  /* Sidebar dimensions */
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+  --sidebar-width-mobile: 18rem;
 }
 
 @layer base {

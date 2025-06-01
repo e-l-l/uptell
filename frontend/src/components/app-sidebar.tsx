@@ -28,10 +28,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </h2>
         </div>
       </SidebarHeader>
-      <SidebarContent className="group-data-[state=collapsed]:pointer-events-none group-data-[state=collapsed]:overflow-hidden">
+      <SidebarContent className="group-data-[state=collapsed]:overflow-hidden">
         <NavMain />
       </SidebarContent>
-      <SidebarFooter className="py-4 border-t border-border group-data-[state=collapsed]:pointer-events-none group-data-[state=collapsed]:overflow-hidden">
+      <SidebarFooter className="py-4 border-t border-border group-data-[state=collapsed]:overflow-hidden">
         <NavUser />
       </SidebarFooter>
       <SidebarRail />
