@@ -12,8 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useCreateOrganization } from "@/lib/hooks/use-user-organizations";
-import { useAtom } from "jotai";
-import { currentOrgAtom } from "@/lib/atoms/auth";
+import { apiClient } from "@/lib/api-client";
 
 interface CreateOrganizationDialogProps {
   userId: string;
@@ -25,7 +24,6 @@ export function CreateOrganizationDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [orgName, setOrgName] = useState("");
   const createOrganization = useCreateOrganization();
-  const [, setCurrentOrg] = useAtom(currentOrgAtom);
 
   const handleCreateOrganization = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +38,7 @@ export function CreateOrganizationDialog({
         {
           onSuccess: (data) => {
             setOrgName("");
-            setCurrentOrg(data.organization);
+            apiClient.setCurrentOrganization(data.organization);
             setIsOpen(false);
           },
         }
