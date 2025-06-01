@@ -1,8 +1,11 @@
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from typing import List
 from ..schemas import Log, LogCreate, LogUpdate
 from ..dependencies import get_supabase
 from websocket_manager import manager
+from utils.notification_service import send_org_notification
+
 router = APIRouter(prefix="/logs", tags=["Incident Logs"])
 
 @router.post("", response_model=Log)
@@ -13,16 +16,38 @@ async def create_log(incident_id: str, payload: LogCreate, supabase=Depends(get_
     if not res.data:
         raise HTTPException(status_code=400, detail="Failed to create log") 
     
-    # Get the incident to find the org_id
-    incident_res = supabase.table("incidents").select("org_id").eq("id", incident_id).execute()
+    # Get the incident to find the org_id and title
+    incident_res = supabase.table("incidents").select("org_id, title").eq("id", incident_id).execute()
     if not incident_res.data:
         raise HTTPException(status_code=404, detail="Incident not found")
     
     user = supabase.auth.get_user().user
-    await manager.broadcast(
+    
+    # Get organization name
+    org_res = supabase.table("orgs").select("name").eq("id", incident_res.data[0]["org_id"]).execute()
+    org_name = org_res.data[0]["name"] if org_res.data else "Unknown Organization"
+    
+    # Get user name
+    user_name = f"{user.user_metadata.get('first_name', '')} {user.user_metadata.get('last_name', '')}".strip()
+    if not user_name:
+        user_name = user.email
+    
+    asyncio.create_task(manager.broadcast(
         {"type": "new_log", "data": res.data[0], "user_id": user.id}, 
         org_id=incident_res.data[0]["org_id"]
-    )
+    ))
+    
+    asyncio.create_task(send_org_notification(
+        org_id=incident_res.data[0]["org_id"],
+        action="created",
+        entity_type="Log",
+        entity_name=f"Status update for {incident_res.data[0]['title']}",
+        user_name=user_name,
+        org_name=org_name,
+        additional_details=f"Update: {res.data[0]['message']}",
+        exclude_user_id=user.id
+    ))
+    
     return res.data[0]
 
 @router.get("", response_model=List[Log])
