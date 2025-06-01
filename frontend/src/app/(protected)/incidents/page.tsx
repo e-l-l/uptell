@@ -41,16 +41,16 @@ import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/spinner";
 import { getIncidentStatusColor } from "./utils";
 
-
-
 export default function IncidentsPage() {
   const [incidentToDelete, setIncidentToDelete] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const currentOrg = useAtomValue(currentOrgAtom);
-  const { data: incidents = [], isLoading: incidentsLoading } = useIncidents(
-    currentOrg?.id ?? ""
-  );
+  const {
+    data: incidents = [],
+    isLoading: incidentsLoading,
+    refetch,
+  } = useIncidents(currentOrg?.id ?? "");
   const createIncident = useCreateIncident();
   const createIncidentLog = useCreateIncidentLog();
   const deleteIncident = useDeleteIncident();

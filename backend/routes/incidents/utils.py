@@ -40,11 +40,9 @@ async def send_incident_create_notifications(
         entity_name=incident_data["title"],
         user_name=user_name,
         org_name=org_name,
-        additional_details=f"Severity: {incident_data['severity']}",
         exclude_user_id=user.id,
         status=incident_data["status"],
         application_name=application_name,
-        severity=incident_data["severity"]
     )
 
 async def send_incident_update_notifications(
@@ -76,7 +74,7 @@ async def send_incident_update_notifications(
         entity_name=incident_data["title"],
         user_name=user_name,
         org_name=org_name,
-        additional_details=f"Status: {incident_data['status']}, Severity: {incident_data['severity']}",
+        additional_details=f"Status: {incident_data['status']}",
         exclude_user_id=user.id,
         status=incident_data["status"],
         application_name=application_name,

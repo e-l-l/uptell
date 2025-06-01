@@ -119,6 +119,9 @@ export const useCreateIncidentLog = () => {
       queryClient.invalidateQueries({
         queryKey: ["incident-logs", variables.incident_id],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["incident", variables.incident_id],
+      });
       toast.success("Log entry added successfully");
     },
     onError: () => {
