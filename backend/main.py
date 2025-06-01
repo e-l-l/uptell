@@ -10,6 +10,7 @@ from routes.apps.router import router as app_router
 from routes.incidents.router import router as incident_router
 from routes.user_orgs.router import router as user_org_router
 from routes.maintenance.router import router as maintenance_router
+from routes.public.router import router as public_router
 from fastapi.middleware.cors import CORSMiddleware
 from gotrue.errors import AuthApiError, AuthInvalidJwtError
 
@@ -92,6 +93,7 @@ app.include_router(app_router)
 app.include_router(incident_router)
 app.include_router(user_org_router)
 app.include_router(maintenance_router)
+app.include_router(public_router)
 
 
 @app.websocket("/ws")

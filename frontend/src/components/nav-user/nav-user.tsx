@@ -126,7 +126,7 @@ export function NavUser() {
           onClick={handleSignOut}
           className="w-full justify-start h-11 rounded-lg transition-all duration-200 text-destructive hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-border px-3 cursor-pointer"
         >
-          <div className="h-6 rounded bg-destructive/10 flex items-center justify-center">
+          <div className="h-6 rounded flex items-center justify-center">
             <LogOut className="h-4 w-4" />
           </div>
           <span className="font-medium text-sm">Log out</span>

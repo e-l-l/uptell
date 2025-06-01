@@ -1,5 +1,5 @@
 from fastapi import Request, HTTPException
-from supabase_client import get_user_supabase_client
+from supabase_client import get_user_supabase_client, get_admin_client
 
 def get_supabase(request: Request):
     """
@@ -30,4 +30,11 @@ def get_supabase(request: Request):
     
     # The get_user_supabase_client function will handle token validation
     # and raise appropriate HTTPExceptions for auth errors
-    return get_user_supabase_client(token) 
+    return get_user_supabase_client(token)
+
+def get_public_supabase():
+    """
+    Dependency to get admin Supabase client for public endpoints.
+    Uses service role key for admin access without authentication.
+    """
+    return get_admin_client() 

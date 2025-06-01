@@ -38,4 +38,11 @@ from .log import (
     LogCreate,
     LogUpdate,
     Log,
+)
+
+from .maintainance import (
+    MaintenanceBase,
+    MaintenanceCreate,
+    MaintenanceUpdate,
+    Maintenance,
 ) 

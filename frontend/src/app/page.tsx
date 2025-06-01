@@ -34,6 +34,12 @@ export default function Home() {
               <span className="text-xl font-bold">uptell</span>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/stats">
+                <Button variant="ghost" size="sm">
+                  <Globe className="w-4 h-4 mr-2" />
+                  Public Status
+                </Button>
+              </Link>
               <Link href="/login">
                 <Button variant="ghost" size="sm">
                   Login
@@ -258,14 +264,14 @@ export default function Home() {
                 </Button>
               </Link>
               {/* <Link href="/contact"> */}
-                <Button
-                  variant="outline"
-                  size="lg"
+              <Button
+                variant="outline"
+                size="lg"
                 className="w-full sm:w-auto"
                 disabled
-                >
-                  Contact Sales
-                </Button>
+              >
+                Contact Sales
+              </Button>
               {/* </Link> */}
             </div>
           </div>

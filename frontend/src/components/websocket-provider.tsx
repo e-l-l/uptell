@@ -26,11 +26,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const cleanup = connectWebSocket(
       currentOrg.id,
       (message: WebSocketMessage) => {
-        console.log("Received WebSocket message:", message);
 
         // Only show toasts and invalidate if the message is from another user
         if (message.user_id && currentUser?.id === message.user_id) {
-          console.log("Ignoring message from current user");
           return;
         }
 
