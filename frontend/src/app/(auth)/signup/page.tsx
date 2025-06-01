@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { isAuthenticatedAtom } from "@/lib/atoms/auth";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isAuthenticated] = useAtom(isAuthenticatedAtom);
   const [formData, setFormData] = useState({
     email: "",
@@ -34,11 +35,13 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const redirectTo = searchParams.get("redirect");
+
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard");
+      router.push(redirectTo || "/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, redirectTo]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -60,13 +63,22 @@ export default function SignUpPage() {
         firstName: formData.firstName,
         lastName: formData.lastName,
       });
-      router.push("/login");
+      // Redirect to login with the redirect parameter if present
+      const loginUrl = redirectTo
+        ? `/login?redirect=${encodeURIComponent(redirectTo)}`
+        : "/login";
+      router.push(loginUrl);
     } catch (err: any) {
       setError(err.message || "Failed to create account");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Construct login link with redirect parameter if present
+  const loginLink = redirectTo
+    ? `/login?redirect=${encodeURIComponent(redirectTo)}`
+    : "/login";
 
   return (
     <Card className="w-full max-w-md p-8 bg-card rounded-lg shadow-lg border border-border">
@@ -183,7 +195,7 @@ export default function SignUpPage() {
             <p className="text-sm text-foreground text-center">
               Already have an account?{" "}
               <Link
-                href="/login"
+                href={loginLink}
                 className="text-primary hover:underline font-bold"
               >
                 Sign in

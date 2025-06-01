@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { isAuthenticatedAtom } from "@/lib/atoms/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isAuthenticated] = useAtom(isAuthenticatedAtom);
   const [formData, setFormData] = useState({
     email: "",
@@ -30,12 +31,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const redirectTo = searchParams.get("redirect");
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard");
+      router.push(redirectTo || "/dashboard");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, redirectTo]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -49,13 +52,18 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       await apiClient.signIn(formData.email, formData.password);
-      router.push("/dashboard");
+      router.push(redirectTo || "/dashboard");
     } catch (err: any) {
       setError(err.message || "Failed to sign in");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Construct signup link with redirect parameter if present
+  const signupLink = redirectTo
+    ? `/signup?redirect=${encodeURIComponent(redirectTo)}`
+    : "/signup";
 
   return (
     <Card className="w-full max-w-md p-8 bg-card rounded-lg shadow-lg border border-border">
@@ -122,7 +130,7 @@ export default function LoginPage() {
             <p className="text-sm text-foreground text-center">
               Don't have an account?{" "}
               <Link
-                href="/signup"
+                href={signupLink}
                 className="text-primary hover:underline font-bold"
               >
                 Sign up

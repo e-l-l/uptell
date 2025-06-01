@@ -57,7 +57,7 @@ export default function JoinWithCodePage() {
 
     try {
       setIsJoining(true);
-      const result = await apiClient.joinOrganization(code);
+      await apiClient.joinOrganization(code);
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["organizations"] });
       queryClient.invalidateQueries({ queryKey: ["organizationMembers"] });
