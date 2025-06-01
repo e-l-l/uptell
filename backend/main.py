@@ -1,5 +1,6 @@
 from typing import Union
 import logging
+import os
 from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from websocket_manager import manager
@@ -64,9 +65,21 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={"detail": "An unexpected error occurred. Please try again later."}
     )
 
+# Configure CORS based on environment
+environment = os.getenv("ENVIRONMENT", "development")
+if environment == "production":
+    allowed_origins = [
+        os.getenv("FRONTEND_URL", "https://localhost:3000/")
+    ]
+    # Remove duplicates while preserving order
+    allowed_origins = list(dict.fromkeys(allowed_origins))
+else:
+    # Allow all origins in development
+    allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
